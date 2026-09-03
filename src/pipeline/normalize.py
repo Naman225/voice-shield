@@ -12,8 +12,7 @@ class AudioNormalizer:
     def __init__(self, target_sr = TARGET_SR, target_samples = TARGET_SAMPLES):
         self.target_sr = target_sr
         self.target_samples = target_samples
-
-        self.resamplers = {} ## cache data
+        self._resamplers = {}  # Fixed: added underscore to match _get_resampler
 
     def _get_resampler(self, orig_sr: int) -> T.Resample:
         if orig_sr not in self._resamplers:
@@ -27,7 +26,11 @@ class AudioNormalizer:
             if waveform.ndim == 2:
                 waveform = waveform.t()
         except Exception:
-            waveform, orig_sr = torchaudio.load(file_path)
+            try:
+                waveform, orig_sr = torchaudio.load(file_path)
+            except Exception:
+                # Fallback for corrupted audio files (prevents DataLoader crash)
+                return torch.zeros(self.target_samples, dtype=torch.float32)
 
 
         ## To mono 
