@@ -33,7 +33,6 @@ def compute_eer(labels, scores):
 def train(epochs=12, backend_lr=3e-5):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"==================================================")
-    print(f" AASIST Overnight Training on IndieFake (Option B)")
     print(f" Device: {device} ({torch.cuda.get_device_name(0) if device == 'cuda' else 'CPU'})")
     print(f" Total Epochs: {epochs} | Backend LR: {backend_lr}")
     print(f"==================================================")

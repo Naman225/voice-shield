@@ -1,0 +1,17 @@
+{
+    "model_name": "AASIST-IndieFake-FineTuned",
+    "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "eer_percent": 13.48,
+    "roc_auc_percent": 95.18,
+    "accuracy_percent": 86.39,
+    "precision_percent": 20.16,
+    "recall_percent": 86.67,
+    "f1_percent": 32.7,
+    "threshold": 2.0555,
+    "latency_ms_per_4s_frame": 18.08,
+    "real_time_factor": 0.0045,
+    "speedup_vs_realtime": "223.4x",
+    "peak_gpu_vram_mb": 2940.2,
+    "parameter_count": 297866,
+    "model_size_mb": 1.22
+}

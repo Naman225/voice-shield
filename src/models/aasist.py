@@ -51,7 +51,7 @@ def get_optimizer_groups(model, frontend_lr=1e-6, backend_lr=3e-5):
                       list(model.first_bn.parameters()) + \
                       list(model.encoder.parameters())
     frontend_ids = set(id(p) for p in frontend_params)
-    # Backend: Graph Attention layers + Classifier head (learn Indian accents)
+   
     backend_params = [p for p in model.parameters() if id(p) not in frontend_ids]
     return [
         {"params": frontend_params, "lr": frontend_lr, "weight_decay": 1e-4},
