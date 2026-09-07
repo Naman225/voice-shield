@@ -1,30 +1,40 @@
+"""
+Voice Shield 🛡️
+AI-Powered Real-Time Voice Cloning Detection & Financial Fraud Prevention Engine
+Smart India Hackathon (SIH 2026) Official Technical Backend Service
+"""
+
 import os
 import sys
 import io
+import time
 import json
 import uuid
+import random
 import numpy as np
 import soundfile as sf
-from typing import List, Optional
+from typing import Optional
 
-# Ensure repository root is in sys.path so 'backend' and 'src' resolve regardless of working directory
+# Ensure repository root is in sys.path
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CURRENT_DIR not in sys.path:
     sys.path.insert(0, _CURRENT_DIR)
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, field_validator
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field
 
 from backend.service import CallSessionManager
 
 app = FastAPI(
-    title="AI-Powered Voice Cloning Detection & Prevention API",
-    description="SIH 2026 Real-Time Impersonation Defense & Active Banking Fraud Gate Backend Service",
-    version="1.0.0",
+    title="Voice Shield 🛡️ AI Voice Cloning Detection & Fraud Prevention API",
+    description="SIH 2026: Real-Time Impersonation Defense & Active Banking Fraud Gate Backend",
+    version="2.0.0",
 )
 
-# Enable CORS for dashboard integration
+# Enable CORS for frontend and dashboard integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,8 +43,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global Session Manager
+# Mount Static Files & Dashboard UI
+STATIC_DIR = os.path.join(_CURRENT_DIR, "static")
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Global Session Manager (loads AASIST model once into GPU/CPU memory)
 session_manager = CallSessionManager()
+
+# In-memory OTP storage for step-up secondary verification
+_ACTIVE_OTPS = {}
 
 
 # -------------------------------------------------------------
@@ -42,7 +60,7 @@ session_manager = CallSessionManager()
 # -------------------------------------------------------------
 class StartCallRequest(BaseModel):
     call_id: Optional[str] = Field(default_factory=lambda: f"CALL-{uuid.uuid4().hex[:8].upper()}")
-    caller_id: str = Field(default="Executive Desk #8941", description="Phone number or caller ID")
+    caller_id: str = Field(default="Executive Desk #8941", description="Caller phone number or identifier")
     account_number: str = Field(default="ACC-9948201", description="Target bank account ID")
 
     model_config = {
@@ -56,52 +74,51 @@ class StartCallRequest(BaseModel):
     }
 
 
-class AudioChunkRequest(BaseModel):
-    call_id: Optional[str] = Field(default="CALL-DEMO-001", description="Call session ID returned by /call/start")
-    samples: List[float] = Field(default_factory=lambda: [0.0, 0.045, 0.09, 0.13, 0.17, 0.21, 0.24, 0.27, 0.3, 0.32], description="Float32 PCM audio samples in range [-1.0, 1.0]")
-    sample_rate: int = Field(default=16000, description="Audio sample rate (e.g., 8000, 16000, 44100)")
-    is_simulated_clone: bool = Field(default=False, description="Set True to simulate a deepfake attack for testing")
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "call_id": "CALL-DEMO-001",
-                "samples": [0.0, 0.045, 0.09, 0.13, 0.17, 0.21, 0.24, 0.27, 0.3, 0.32],
-                "sample_rate": 16000,
-                "is_simulated_clone": False,
-            }
-        }
-    }
-
-    @field_validator("samples")
-    @classmethod
-    def samples_must_not_be_empty(cls, v: List[float]) -> List[float]:
-        if len(v) == 0:
-            raise ValueError("'samples' must not be empty. Provide at least 1 PCM float32 audio sample.")
-        return v
-
-
 class UnfreezeRequest(BaseModel):
     supervisor_id: str = Field(default="SUP-7701", description="Authorized supervisor credential ID")
 
 
+class BankTransferRequest(BaseModel):
+    call_id: str = Field(..., description="Active call monitoring session ID")
+    account_number: str = Field(default="ACC-550189", description="Source bank account ID")
+    beneficiary: str = Field(default="ABC Corp Ltd", description="Recipient beneficiary")
+    amount: float = Field(default=2500000.0, description="Transfer amount in INR")
+
+
+class VerifyOTPRequest(BaseModel):
+    otp: str = Field(..., description="6-digit One Time Password for secondary verification")
+
+
 # -------------------------------------------------------------
-# REST ENDPOINTS
+# CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
 @app.get("/")
 def root():
     return {
-        "service": "AI-Powered Real-Time Voice Cloning Detection Backend",
+        "service": "Voice Shield 🛡️ Real-Time Voice Cloning Detection & Fraud Prevention",
         "status": "ONLINE",
-        "version": "1.0.0",
-        "target_accent": "Indian English (IndieFake Adaptive Engine)",
+        "version": "2.0.0",
+        "target_accent": "Indian English (IndieFake Adaptive AASIST Model)",
+        "dashboard_ui": "/dashboard",
         "documentation": "/docs",
     }
 
 
+@app.get("/dashboard", response_class=FileResponse)
+def get_dashboard():
+    """Serves the interactive Voice Shield Live Monitoring SOC Dashboard."""
+    dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
+    if not os.path.isfile(dashboard_file):
+        raise HTTPException(status_code=404, detail="Dashboard UI file not found.")
+    return FileResponse(dashboard_file)
+
+
+# -------------------------------------------------------------
+# CALL SESSION MANAGEMENT & AUDIO FORENSICS
+# -------------------------------------------------------------
 @app.post("/api/v1/call/start")
 def start_call(req: Optional[StartCallRequest] = None):
-    """Initializes a new real-time call monitoring session."""
+    """Initializes a new real-time voice call monitoring session."""
     if req is None:
         req = StartCallRequest()
     session = session_manager.create_session(
@@ -119,41 +136,17 @@ def start_call(req: Optional[StartCallRequest] = None):
     }
 
 
-@app.post("/api/v1/call/chunk")
-def ingest_chunk(req: Optional[AudioChunkRequest] = None):
-    """Ingests a raw PCM audio chunk (samples array), updates sliding buffer, calculates EMA risk, and updates fraud gate."""
-    if req is None:
-        req = AudioChunkRequest()
-    session = session_manager.get_session(req.call_id)
-    if not session:
-        # Auto-create session if not present so chunk processing never fails
-        session = session_manager.create_session(
-            call_id=req.call_id,
-            caller_id="Executive Desk #8941",
-            account_number="ACC-9948201",
-        )
-
-    pcm_array = np.array(req.samples, dtype=np.float32)
-    result = session.process_audio_chunk(
-        pcm_samples=pcm_array,
-        sample_rate=req.sample_rate,
-        is_simulated_clone=req.is_simulated_clone,
-    )
-    return result
-
-
 @app.post("/api/v1/call/upload-audio")
 async def upload_audio_file(
-    file: UploadFile = File(..., description="Audio file (.wav, .mp3, .ogg, .flac)"),
+    file: UploadFile = File(..., description="Audio file (.wav, .mp3, .ogg, .flac) to analyze"),
     call_id: Optional[str] = Form(None, description="Optional call session ID. Auto-generated if omitted."),
     caller_id: Optional[str] = Form("Executive Desk #8941", description="Caller phone or identifier"),
-    account_number: Optional[str] = Form("ACC-9948201", description="Target bank account ID"),
-    stream_by_chunks: bool = Form(True, description="If True, stream through the sliding buffer in 1.0s increments to simulate live call progression.")
+    account_number: Optional[str] = Form("ACC-550189", description="Target bank account ID"),
+    stream_by_chunks: bool = Form(True, description="If True, streams through sliding buffer in 1.0s increments to simulate live call progression.")
 ):
     """
-    Upload a real audio file (.mp3, .wav, etc.) to analyze for deepfake voice cloning.
-    Decodes audio bytes, normalizes to 16kHz mono, runs AASIST deep learning inference,
-    and returns real-time fraud risk telemetry and fraud gate status.
+    Uploads a recorded audio file to verify voice authenticity with fine-tuned AASIST.
+    Returns real-time risk score, confidence percentage, risk tier, and active fraud gate state.
     """
     try:
         content = await file.read()
@@ -181,15 +174,15 @@ async def upload_audio_file(
     duration_sec = round(total_samples / 16000.0, 2)
 
     if stream_by_chunks and total_samples > 16000:
-        # Stream through buffer in 1.0s chunks to simulate live call progression
         chunk_size = 16000
         last_result = None
         for i in range(0, total_samples, chunk_size):
             chunk = mono[i : i + chunk_size]
             last_result = session.process_audio_chunk(chunk, sample_rate=16000)
+            if last_result.get("fraud_gate", {}).get("is_frozen"):
+                break
         res = last_result or session.get_summary()
     else:
-        # Single-pass ingestion
         res = session.process_audio_chunk(mono, sample_rate=16000)
 
     res["uploaded_filename"] = file.filename
@@ -203,37 +196,9 @@ async def upload_audio_file(
     return res
 
 
-@app.post("/api/v1/call/chunk-audio")
-async def ingest_audio_chunk_file(
-    file: UploadFile = File(..., description="Audio chunk file (.wav, .mp3, etc.)"),
-    call_id: Optional[str] = Form("CALL-DEMO-001", description="Active call session ID"),
-):
-    """
-    Ingest a short audio chunk file (e.g. from VoIP recorder or browser microphone)
-    directly into the active session's sliding buffer.
-    """
-    try:
-        content = await file.read()
-        audio_data, sr = sf.read(io.BytesIO(content))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to decode chunk '{file.filename}': {e}")
-
-    session = session_manager.get_session(call_id)
-    if not session:
-        session = session_manager.create_session(
-            call_id=call_id,
-            caller_id="VoIP Channel",
-            account_number="ACC-9948201",
-        )
-
-    res = session.process_audio_chunk(audio_data.astype(np.float32), sample_rate=sr)
-    res["uploaded_chunk"] = file.filename
-    return res
-
-
 @app.get("/api/v1/call/status/{call_id}")
 def get_call_status(call_id: str):
-    """Fetches live call metrics, EMA risk score, history trend, and fraud prevention gate status."""
+    """Fetches live call telemetry, EMA risk score, historical trend, and fraud prevention gate status."""
     session = session_manager.get_session(call_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
@@ -242,7 +207,7 @@ def get_call_status(call_id: str):
 
 @app.post("/api/v1/call/unfreeze/{call_id}")
 def unfreeze_transaction(call_id: str, req: Optional[UnfreezeRequest] = None):
-    """Allows an authorized supervisor to unlock a frozen transaction after manual 2FA validation."""
+    """Allows an authorized supervisor to unlock a frozen transaction after manual out-of-band validation."""
     if req is None:
         req = UnfreezeRequest()
     session = session_manager.get_session(call_id)
@@ -259,22 +224,122 @@ def unfreeze_transaction(call_id: str, req: Optional[UnfreezeRequest] = None):
 
 @app.delete("/api/v1/call/{call_id}")
 def end_call(call_id: str):
-    """Ends call monitoring session and clears buffers."""
+    """Ends call monitoring session and clears memory buffers."""
     success = session_manager.close_session(call_id)
+    _ACTIVE_OTPS.pop(call_id, None)
     if not success:
         raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
     return {"status": "SESSION_CLOSED", "call_id": call_id}
 
 
 # -------------------------------------------------------------
-# WEBSOCKET REAL-TIME AUDIO STREAMING ENDPOINT
+# ACTIVE BANKING FRAUD PREVENTION & STEP-UP 2FA (PS REQUIREMENT)
+# -------------------------------------------------------------
+@app.post("/api/v1/bank/transfer")
+def execute_wire_transfer(req: BankTransferRequest):
+    """
+    Executes a high-value bank wire transfer.
+    Strictly protected by Voice Shield AI fraud gate:
+    - 🔴 RED (Voice Clone): Returns 403 Forbidden and physically blocks transfer.
+    - 🟡 AMBER (Suspicious Prosody): Returns 202 Accepted and triggers Step-Up OTP.
+    - 🟢 GREEN (Authentic Human): Returns 200 OK and authorizes fund transfer.
+    """
+    session = session_manager.get_session(req.call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Active call session '{req.call_id}' not found.")
+
+    gate = session.fraud_gate.get_status()
+    risk_pct = session.running_risk_pct
+
+    if gate.get("is_frozen") or session.current_tier == "RED":
+        return JSONResponse(
+            status_code=403,
+            content={
+                "status": "TRANSFER_BLOCKED",
+                "reason": "ACTIVE_VOICE_CLONE_ATTACK_DETECTED",
+                "risk_score": f"{risk_pct:.1f}%",
+                "lock_reason": gate.get("lock_reason"),
+                "action": "Wire transfer physically locked. Out-of-band supervisor intervention required.",
+                "evidence_hash": f"SHA256-{uuid.uuid4().hex}"
+            }
+        )
+
+    if session.current_tier == "AMBER":
+        otp_code = f"{random.randint(100000, 999999)}"
+        _ACTIVE_OTPS[req.call_id] = otp_code
+        print(f"\n[STEP-UP OTP DISPATCH] 📲 Sent OTP {otp_code} for call session {req.call_id} (Account: {req.account_number})")
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": "PENDING_STEP_UP_2FA",
+                "message": "Elevated voice risk detected. 6-digit OTP dispatched to registered mobile.",
+                "call_id": req.call_id,
+                "risk_score": f"{risk_pct:.1f}%",
+                "demo_otp": otp_code,
+            }
+        )
+
+    # 🟢 GREEN SAFE
+    receipt_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+    return {
+        "status": "TRANSFER_SUCCESSFUL",
+        "receipt_id": receipt_id,
+        "amount": req.amount,
+        "beneficiary": req.beneficiary,
+        "source_account": req.account_number,
+        "voice_integrity_score": f"{100.0 - risk_pct:.1f}% (Authentic Human Caller)",
+        "timestamp": time.time(),
+    }
+
+
+@app.post("/api/v1/call/send-otp/{call_id}")
+def send_otp(call_id: str):
+    """Dispatches a step-up authentication OTP for a flagged call."""
+    session = session_manager.get_session(call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
+    otp_code = f"{random.randint(100000, 999999)}"
+    _ACTIVE_OTPS[call_id] = otp_code
+    print(f"\n[OTP DISPATCH] 📲 Generated OTP {otp_code} for call {call_id}")
+    return {
+        "status": "OTP_SENT",
+        "call_id": call_id,
+        "otp_code_demo": otp_code,
+        "message": f"6-digit OTP dispatched for session {call_id}."
+    }
+
+
+@app.post("/api/v1/call/verify-otp/{call_id}")
+def verify_otp(call_id: str, req: VerifyOTPRequest):
+    """Verifies OTP and unlocks the fraud gate if valid."""
+    session = session_manager.get_session(call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
+
+    expected_otp = _ACTIVE_OTPS.get(call_id)
+    if not expected_otp or req.otp != expected_otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP code. Transaction remains locked.")
+
+    # Unfreeze gate
+    session.fraud_gate.manual_override_unfreeze(f"OTP-VERIFIED-{req.otp}")
+    _ACTIVE_OTPS.pop(call_id, None)
+    return {
+        "status": "OTP_VERIFIED_SUCCESS",
+        "call_id": call_id,
+        "message": "Step-up 2FA successful. Fraud gate unlocked for wire transfer.",
+        "fraud_gate": session.fraud_gate.get_status()
+    }
+
+
+# -------------------------------------------------------------
+# WEBSOCKET REAL-TIME AUDIO STREAMING (FOR MIC & VOIP)
 # -------------------------------------------------------------
 @app.websocket("/ws/call/{call_id}")
 async def websocket_call_stream(websocket: WebSocket, call_id: str):
     """
     Bi-directional WebSocket real-time audio stream.
-    Client sends JSON packets containing audio sample arrays or control messages.
-    Backend returns real-time risk updates, tier badges, and active fraud gate alerts.
+    Receives streaming audio chunks from browser microphone or VoIP PBX.
+    Returns real-time AASIST risk updates, tier badges, and active fraud gate alerts.
     """
     await websocket.accept()
 
@@ -283,7 +348,7 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
         session = session_manager.create_session(
             call_id=call_id,
             caller_id="VoIP Incoming Channel",
-            account_number="ACC-DEFAULT",
+            account_number="ACC-550189",
         )
 
     try:
@@ -293,14 +358,12 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
 
             samples = message.get("samples", [])
             sample_rate = message.get("sample_rate", 16000)
-            is_simulated_clone = message.get("is_simulated_clone", False)
 
             if samples:
                 pcm_array = np.array(samples, dtype=np.float32)
                 response = session.process_audio_chunk(
                     pcm_samples=pcm_array,
                     sample_rate=sample_rate,
-                    is_simulated_clone=is_simulated_clone,
                 )
                 await websocket.send_json(response)
             else:
@@ -312,4 +375,4 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, app_dir=_CURRENT_DIR)

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Shield 🛡️ Live Call Monitoring Center</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --border-color: #334155;
+            --font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: #0b1120;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Layout */
+        main {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-green { background-color: var(--green); }
+        .btn-red { background-color: var(--red); }
+        .btn-amber { background-color: var(--amber); color: #000; }
+
+        /* Left Panel - Call Controls */
+        #upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        #upload-zone:hover, #upload-zone.dragover {
+            border-color: var(--green);
+        }
+        #upload-zone p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        #upload-input { display: none; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .info-item {
+            background-color: #0b1120;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        /* Center Panel - Visualizations */
+        .gauge-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .gauge-svg {
+            width: 250px;
+            height: 125px; /* Half circle */
+            overflow: visible;
+        }
+        .gauge-bg {
+            fill: none;
+            stroke: var(--border-color);
+            stroke-width: 20;
+            stroke-linecap: round;
+        }
+        .gauge-arc {
+            fill: none;
+            stroke: var(--green);
+            stroke-width: 20;
+            stroke-linecap: round;
+            stroke-dasharray: 314; /* PI * r (r=100) */
+            stroke-dashoffset: 314;
+            transition: stroke-dashoffset 0.5s ease-out, stroke 0.5s;
+        }
+        .gauge-text {
+            position: absolute;
+            top: 70px;
+            font-size: 3.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            display: flex;
+            align-items: baseline;
+        }
+        .gauge-text span {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+        .gauge-label {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--green);
+            transition: color 0.5s;
+        }
+
+        .canvas-container {
+            background-color: #0b1120;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        .canvas-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        canvas {
+            width: 100%;
+            height: 100px;
+            display: block;
+        }
+
+        /* Right Panel - Fraud Gate & Banking */
+        .status-badge {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+            transition: all 0.3s;
+        }
+        .status-details {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: center;
+            min-height: 40px;
+        }
+        .evidence-hash {
+            font-size: 0.75rem;
+            font-family: monospace;
+            word-break: break-all;
+            color: var(--text-muted);
+            background: #0b1120;
+            padding: 0.5rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .bank-panel {
+            background-color: #0b1120;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .bank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .bank-details {
+            margin-bottom: 1.5rem;
+        }
+        .bank-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .bank-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+        
+        .override-link {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .override-link:hover {
+            color: white;
+        }
+
+        /* Alert Banner */
+        #alert-banner {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0 0 8px 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            transition: top 0.4s ease-out;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        #alert-banner.show {
+            top: 0;
+        }
+
+        /* Modal */
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 400px;
+            border: 1px solid var(--border-color);
+        }
+        .modal h2 { margin-bottom: 1.5rem; }
+        .modal input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: #0b1120;
+            color: white;
+            font-size: 1rem;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Utilities */
+        .color-green { color: var(--green); }
+        .color-amber { color: var(--amber); }
+        .color-red { color: var(--red); }
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Voice Shield 🛡️ Live Call Monitoring Center</h1>
+        <div id="alert-banner"></div>
+    </header>
+
+    <main>
+        <!-- Left Panel -->
+        <section class="panel">
+            <h2 class="panel-title">Call Controls</h2>
+            
+            <button id="btn-live-call" class="btn">🎙️ Start Live Call</button>
+            
+            <div id="upload-zone">
+                <div>📁 Drag & Drop Audio File</div>
+                <p>Supports .wav, .mp3, .ogg, .flac</p>
+                <input type="file" id="upload-input" accept=".wav,.mp3,.ogg,.flac">
+                <div id="upload-status" style="margin-top: 10px; font-size: 0.85rem; color: var(--amber); display: none;"></div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">CALL ID</div>
+                    <div class="info-value" id="disp-call-id">WAITING...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">DURATION</div>
+                    <div class="info-value" id="disp-duration">00:00</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">CHUNKS PROCESSED</div>
+                    <div class="info-value" id="disp-chunks">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Center Panel -->
+        <section class="panel">
+            <h2 class="panel-title">Risk Analysis</h2>
+            
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 220 110">
+                    <path class="gauge-bg" d="M 10,100 A 100,100 0 0,1 210,100" />
+                    <path class="gauge-arc" id="gauge-arc" d="M 10,100 A 100,100 0 0,1 210,100" />
+                </svg>
+                <div class="gauge-text"><span id="gauge-val">0</span><span>%</span></div>
+                <div class="gauge-label" id="gauge-label">VOICE INTEGRITY SCORE</div>
+            </div>
+
+            <div class="canvas-container">
+                <div class="canvas-title">Live Audio Waveform</div>
+                <canvas id="waveform-canvas"></canvas>
+            </div>
+
+            <div class="canvas-container">
+                <div class="canvas-title">Risk Timeline (60s)</div>
+                <canvas id="timeline-canvas"></canvas>
+            </div>
+        </section>
+
+        <!-- Right Panel -->
+        <section class="panel">
+            <h2 class="panel-title">Fraud Gate & Banking</h2>
+            
+            <div class="status-badge" id="gate-badge">
+                ✅ APPROVED
+            </div>
+            <div class="status-details" id="gate-reason">
+                Call audio exhibits natural patterns.
+            </div>
+            <div class="evidence-hash" id="gate-hash"></div>
+
+            <div class="bank-panel">
+                <div class="bank-header">
+                    <strong>Wire Transfer Auth</strong>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">ID: TRX-99214</span>
+                </div>
+                <div class="bank-details">
+                    <div class="bank-row">
+                        <span style="color: var(--text-muted);">Beneficiary:</span>
+                        <span>ABC Corp Ltd</span>
+                    </div>
+                    <div class="bank-row">
+                        <span style="color: var(--text-muted);">Account:</span>
+                        <span>**** **** 4492</span>
+                    </div>
+                    <div class="bank-amount">₹25,00,000</div>
+                </div>
+                <button id="btn-transfer" class="btn btn-green">Authorize Transfer</button>
+                <a class="override-link" id="link-override">Supervisor Override</a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-overlay">
+        <div class="modal">
+            <h2>Supervisor Authentication</h2>
+            <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                Enter Supervisor ID to override system freeze.
+            </p>
+            <input type="text" id="sup-id" value="SUP-7701">
+            <div class="modal-actions">
+                <button class="btn" style="background-color: transparent; border: 1px solid var(--border-color); width: auto;" id="btn-modal-cancel">Cancel</button>
+                <button class="btn btn-green" style="width: auto;" id="btn-modal-submit">🔓 Override & Unfreeze</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants & State
+        const SAMPLE_RATE = 16000;
+        const SAMPLES_PER_CHUNK = 8000; // ~500ms
+        const MAX_HISTORY = 60; // 60 seconds history for timeline
+        
+        let callId = null;
+        let isLive = false;
+        let ws = null;
+        let audioContext = null;
+        let micStream = null;
+        let scriptProcessor = null;
+        let sampleBuffer = [];
+        let callStartTime = null;
+        let timerInterval = null;
+        
+        let riskHistory = new Array(MAX_HISTORY).fill(0);
+        let waveformData = new Uint8Array(128); // dummy data for waveform if not live
+        let analyser = null;
+        let animationId = null;
+        
+        // DOM Elements
+        const btnLiveCall = document.getElementById('btn-live-call');
+        const uploadZone = document.getElementById('upload-zone');
+        const uploadInput = document.getElementById('upload-input');
+        const uploadStatus = document.getElementById('upload-status');
+        
+        const dispCallId = document.getElementById('disp-call-id');
+        const dispDuration = document.getElementById('disp-duration');
+        const dispChunks = document.getElementById('disp-chunks');
+        
+        const gaugeArc = document.getElementById('gauge-arc');
+        const gaugeVal = document.getElementById('gauge-val');
+        const gaugeLabel = document.getElementById('gauge-label');
+        
+        const waveCanvas = document.getElementById('waveform-canvas');
+        const waveCtx = waveCanvas.getContext('2d');
+        const timeCanvas = document.getElementById('timeline-canvas');
+        const timeCtx = timeCanvas.getContext('2d');
+        
+        const gateBadge = document.getElementById('gate-badge');
+        const gateReason = document.getElementById('gate-reason');
+        const gateHash = document.getElementById('gate-hash');
+        
+        const btnTransfer = document.getElementById('btn-transfer');
+        const linkOverride = document.getElementById('link-override');
+        const alertBanner = document.getElementById('alert-banner');
+        
+        const modalOverlay = document.getElementById('modal-overlay');
+        const btnModalCancel = document.getElementById('btn-modal-cancel');
+        const btnModalSubmit = document.getElementById('btn-modal-submit');
+        const supIdInput = document.getElementById('sup-id');
+
+        // Initialization
+        function init() {
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+            drawWaveform();
+            drawTimeline();
+        }
+
+        function resizeCanvases() {
+            waveCanvas.width = waveCanvas.parentElement.clientWidth - 32;
+            waveCanvas.height = 100;
+            timeCanvas.width = timeCanvas.parentElement.clientWidth - 32;
+            timeCanvas.height = 100;
+        }
+
+        // Generate Call ID
+        function generateCallId() {
+            return `CALL-${Math.random().toString(36).substr(2,8).toUpperCase()}`;
+        }
+
+        // --- Live Call Handling ---
+        btnLiveCall.addEventListener('click', toggleLiveCall);
+
+        async function toggleLiveCall() {
+            if (isLive) {
+                stopLiveCall();
+            } else {
+                await startLiveCall();
+            }
+        }
+
+        async function startLiveCall() {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                callId = generateCallId();
+                dispCallId.innerText = callId;
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+                const source = audioContext.createMediaStreamSource(micStream);
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+                
+                sampleBuffer = [];
+                
+                // WebSocket Connection
+                const wsUrl = `ws://${location.host}/ws/call/${callId}`;
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WS Connected');
+                    isLive = true;
+                    btnLiveCall.innerText = '⏹️ Stop Call';
+                    btnLiveCall.classList.replace('btn-green', 'btn-red');
+                    if(!btnLiveCall.classList.contains('btn-red')) {
+                        btnLiveCall.style.backgroundColor = 'var(--red)';
+                    }
+                    
+                    startTimer();
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleServerUpdate(data);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WS Error:', error);
+                    stopLiveCall();
+                };
+
+                ws.onclose = () => {
+                    stopLiveCall();
+                };
+
+                scriptProcessor.onaudioprocess = (e) => {
+                    if (!isLive || ws.readyState !== WebSocket.OPEN) return;
+                    
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    for (let i = 0; i < inputData.length; i++) {
+                        sampleBuffer.push(inputData[i]);
+                    }
+                    
+                    if (sampleBuffer.length >= SAMPLES_PER_CHUNK) {
+                        const chunk = sampleBuffer.splice(0, SAMPLES_PER_CHUNK);
+                        ws.send(JSON.stringify({
+                            samples: chunk,
+                            sample_rate: SAMPLE_RATE
+                        }));
+                    }
+                };
+
+            } catch (err) {
+                console.error('Mic access denied or error:', err);
+                alert('Could not access microphone.');
+            }
+        }
+
+        function stopLiveCall() {
+            isLive = false;
+            btnLiveCall.innerText = '🎙️ Start Live Call';
+            btnLiveCall.style.backgroundColor = '#3b82f6';
+            
+            if (scriptProcessor) {
+                scriptProcessor.disconnect();
+                scriptProcessor = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+                micStream = null;
+            }
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            stopTimer();
+        }
+
+        function startTimer() {
+            callStartTime = Date.now();
+            timerInterval = setInterval(() => {
+                const diff = Math.floor((Date.now() - callStartTime) / 1000);
+                const m = String(Math.floor(diff / 60)).padStart(2, '0');
+                const s = String(diff % 60).padStart(2, '0');
+                dispDuration.innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        // --- File Upload Handling ---
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+        uploadZone.addEventListener('click', () => uploadInput.click());
+        uploadInput.addEventListener('change', () => {
+            if (uploadInput.files.length) handleFileUpload(uploadInput.files[0]);
+        });
+
+        async function handleFileUpload(file) {
+            callId = generateCallId();
+            dispCallId.innerText = callId;
+            uploadStatus.style.display = 'block';
+            uploadStatus.innerText = `⏳ Processing ${file.name}...`;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('call_id', callId);
+
+            try {
+                const res = await fetch('/api/v1/call/upload-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                const data = await res.json();
+                handleServerUpdate(data);
+                uploadStatus.innerText = `✅ Processed ${file.name}`;
+                setTimeout(() => uploadStatus.style.display = 'none', 3000);
+            } catch (err) {
+                console.error(err);
+                uploadStatus.innerText = '❌ Error processing file';
+            }
+        }
+
+        // --- UI Updates ---
+        function handleServerUpdate(data) {
+            if (data.chunks_ingested !== undefined) dispChunks.innerText = data.chunks_ingested;
+            if (data.duration_sec !== undefined && !isLive) {
+                const m = String(Math.floor(data.duration_sec / 60)).padStart(2, '0');
+                const s = String(Math.floor(data.duration_sec % 60)).padStart(2, '0');
+                dispDuration.innerText = `${m}:${s}`;
+            }
+
+            if (data.running_risk_pct !== undefined) {
+                updateGauge(data.running_risk_pct, data.risk_tier);
+                riskHistory.push(data.running_risk_pct);
+                if (riskHistory.length > MAX_HISTORY) riskHistory.shift();
+            }
+
+            if (data.fraud_gate) {
+                updateFraudGate(data.fraud_gate, data.risk_tier);
+            }
+        }
+
+        function updateGauge(pct, tier) {
+            gaugeVal.innerText = Math.round(pct);
+            // 314 is full arc, 0 is max offset (empty), 314 is full offset (empty). 
+            // Wait, standard stroke-dashoffset: 0 is full stroke. 314 is empty.
+            const offset = 314 - (314 * pct / 100);
+            gaugeArc.style.strokeDashoffset = offset;
+
+            let color = 'var(--green)';
+            if (tier === 'AMBER' || pct >= 40 && pct < 75) color = 'var(--amber)';
+            if (tier === 'RED' || pct >= 75) color = 'var(--red)';
+            
+            gaugeArc.style.stroke = color;
+            gaugeLabel.style.color = color;
+        }
+
+        function updateFraudGate(gate, tier) {
+            gateBadge.style.backgroundColor = 'transparent';
+            
+            if (gate.state === 'APPROVED') {
+                gateBadge.innerHTML = '✅ APPROVED';
+                gateBadge.style.color = 'var(--green)';
+                gateBadge.style.borderColor = 'var(--green)';
+                gateBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                
+                btnTransfer.className = 'btn btn-green';
+                btnTransfer.innerText = 'Authorize Transfer';
+                btnTransfer.disabled = false;
+                btnTransfer.onclick = () => {
+                    btnTransfer.innerText = '✅ Transfer Authorized';
+                    setTimeout(() => { btnTransfer.innerText = 'Authorize Transfer'; }, 2000);
+                };
+                hideAlert();
+            } else if (gate.state === 'CAUTION') {
+                gateBadge.innerHTML = '⚠️ CAUTION';
+                gateBadge.style.color = 'var(--amber)';
+                gateBadge.style.borderColor = 'var(--amber)';
+                gateBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+                
+                btnTransfer.className = 'btn btn-amber';
+                btnTransfer.innerText = '⚠️ OTP Required';
+                btnTransfer.disabled = false;
+                showAlert('AMBER', '⚠️ Suspicious Voice Activity Detected');
+            } else if (gate.state === 'FROZEN') {
+                gateBadge.innerHTML = '🚨 FROZEN';
+                gateBadge.style.color = 'var(--red)';
+                gateBadge.style.borderColor = 'var(--red)';
+                gateBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                
+                btnTransfer.className = 'btn btn-red';
+                btnTransfer.innerText = '🔒 Blocked';
+                btnTransfer.disabled = true;
+                showAlert('RED', '🚨 CRITICAL: AI Voice Clone Detected — Wire Transfer FROZEN');
+            }
+
+            gateReason.innerText = gate.lock_reason || 'Analyzing call patterns...';
+            
+            if (gate.is_frozen && gate.evidence_hash) {
+                gateHash.style.display = 'block';
+                gateHash.innerText = `Hash: ${gate.evidence_hash.substring(0, 32)}...`;
+            } else {
+                gateHash.style.display = 'none';
+            }
+        }
+
+        function showAlert(tier, text) {
+            alertBanner.innerText = text;
+            alertBanner.className = 'show';
+            if (tier === 'AMBER') {
+                alertBanner.style.backgroundColor = 'var(--amber)';
+                alertBanner.style.color = '#000';
+            } else {
+                alertBanner.style.backgroundColor = 'var(--red)';
+                alertBanner.style.color = '#fff';
+            }
+        }
+
+        function hideAlert() {
+            alertBanner.className = '';
+        }
+
+        // --- Visualizations ---
+        function drawWaveform() {
+            requestAnimationFrame(drawWaveform);
+            
+            waveCtx.fillStyle = '#0b1120';
+            waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+            
+            if (isLive && analyser) {
+                analyser.getByteTimeDomainData(waveFormData);
+            } else {
+                // draw flat line if not live
+                waveFormData.fill(128);
+            }
+
+            waveCtx.lineWidth = 2;
+            waveCtx.strokeStyle = 'var(--green)';
+            waveCtx.beginPath();
+
+            const sliceWidth = waveCanvas.width * 1.0 / waveFormData.length;
+            let x = 0;
+
+            for (let i = 0; i < waveFormData.length; i++) {
+                const v = waveFormData[i] / 128.0;
+                const y = v * waveCanvas.height / 2;
+
+                if (i === 0) waveCtx.moveTo(x, y);
+                else waveCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            waveCtx.lineTo(waveCanvas.width, waveCanvas.height / 2);
+            waveCtx.stroke();
+        }
+        
+        if (!window.waveFormData) window.waveFormData = new Uint8Array(2048);
+
+        function drawTimeline() {
+            requestAnimationFrame(drawTimeline);
+            
+            timeCtx.fillStyle = '#0b1120';
+            timeCtx.fillRect(0, 0, timeCanvas.width, timeCanvas.height);
+            
+            // Draw thresholds
+            timeCtx.strokeStyle = 'rgba(245, 158, 11, 0.5)'; // Amber
+            timeCtx.setLineDash([5, 5]);
+            timeCtx.beginPath();
+            timeCtx.moveTo(0, timeCanvas.height * (1 - 0.40));
+            timeCtx.lineTo(timeCanvas.width, timeCanvas.height * (1 - 0.40));
+            timeCtx.stroke();
+
+            timeCtx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; // Red
+            timeCtx.beginPath();
+            timeCtx.moveTo(0, timeCanvas.height * (1 - 0.75));
+            timeCtx.lineTo(timeCanvas.width, timeCanvas.height * (1 - 0.75));
+            timeCtx.stroke();
+            timeCtx.setLineDash([]);
+
+            // Draw line
+            if (riskHistory.length === 0) return;
+            
+            timeCtx.lineWidth = 2;
+            timeCtx.beginPath();
+            
+            const sliceWidth = timeCanvas.width / (MAX_HISTORY - 1);
+            
+            for (let i = 0; i < riskHistory.length; i++) {
+                const x = i * sliceWidth;
+                const y = timeCanvas.height * (1 - (riskHistory[i] / 100));
+                
+                if (i === 0) timeCtx.moveTo(x, y);
+                else timeCtx.lineTo(x, y);
+            }
+            
+            const latest = riskHistory[riskHistory.length - 1];
+            if (latest >= 75) timeCtx.strokeStyle = 'var(--red)';
+            else if (latest >= 40) timeCtx.strokeStyle = 'var(--amber)';
+            else timeCtx.strokeStyle = 'var(--green)';
+            
+            timeCtx.stroke();
+        }
+
+        // --- Supervisor Override ---
+        linkOverride.addEventListener('click', () => {
+            modalOverlay.style.display = 'flex';
+        });
+        btnModalCancel.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+        btnModalSubmit.addEventListener('click', async () => {
+            if (!callId) {
+                alert('No active call to override.');
+                return;
+            }
+            const supId = supIdInput.value;
+            try {
+                const res = await fetch(`/api/v1/call/unfreeze/${callId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ supervisor_id: supId })
+                });
+                if (res.ok) {
+                    modalOverlay.style.display = 'none';
+                    // Optimistically update
+                    updateFraudGate({
+                        state: 'APPROVED',
+                        is_frozen: false,
+                        lock_reason: `Override by ${supId}`
+                    }, 'GREEN');
+                    updateGauge(0, 'GREEN');
+                    hideAlert();
+                } else {
+                    alert('Override failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error during override.');
+            }
+        });
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
