@@ -1,7 +1,15 @@
+import os
+import sys
 import json
 import uuid
 import numpy as np
 from typing import List, Optional
+
+# Ensure repository root is in sys.path so 'backend' and 'src' resolve regardless of working directory
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _CURRENT_DIR not in sys.path:
+    sys.path.insert(0, _CURRENT_DIR)
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
