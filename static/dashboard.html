@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- ── SEO & Enterprise Metadata ───────────────────────────────────── -->
-    <title>Voice Shield 🛡️ Real-Time Voice Cloning Detection & Fraud Gate</title>
-    <meta name="description" content="Voice Shield: Production-grade real-time audio forensics, voice cloning interception, automated hangup on deepfakes, and active banking fraud gate.">
-    <meta name="keywords" content="voice cloning detection, deepfake defense, audio forensics, AASIST, banking fraud gate, telephony security, SIH 2026">
+    <title>Voice Shield 🛡️ Real-Time Voice Cloning Detection & Conversational Fraud Gate</title>
+    <meta name="description" content="Voice Shield: Hands-free voice-driven banking IVR protected by real-time AASIST voice clone detection, automated security challenges, and instant deepfake call termination.">
+    <meta name="keywords" content="voice cloning detection, deepfake defense, audio forensics, AASIST, banking fraud gate, telephony security, conversational IVR, SIH 2026">
     <meta name="author" content="Team Voice Shield - SIH 2026">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="http://localhost:8000/dashboard">
 
     <meta property="og:title" content="Voice Shield 🛡️ Real-Time Voice Clone Detection & Fraud Gate">
-    <meta property="og:description" content="Continuous voice verification, auto-hangup on deepfakes, and active banking protection.">
+    <meta property="og:description" content="Voice-driven interactive banking with real-time deepfake defense and automated call interception.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="http://localhost:8000/dashboard">
 
@@ -90,11 +90,7 @@
             z-index: 100;
         }
 
-        .brand-cluster {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-        }
+        .brand-cluster { display: flex; align-items: center; gap: 0.85rem; }
 
         .brand-icon {
             width: 38px;
@@ -127,10 +123,7 @@
             font-weight: 600;
         }
 
-        .brand-sub {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
+        .brand-sub { font-size: 0.75rem; color: var(--text-secondary); }
 
         .header-telemetry {
             display: flex;
@@ -207,7 +200,7 @@
         /* ── Grid Dashboard Layout ─────────────────────────────────── */
         .grid-dashboard {
             display: grid;
-            grid-template-columns: 310px 1fr 340px;
+            grid-template-columns: 290px 1fr 370px;
             gap: 1.5rem;
             align-items: start;
         }
@@ -394,9 +387,7 @@
             transition: all 0.3s ease;
         }
 
-        .canvas-block {
-            margin-top: 1.25rem;
-        }
+        .canvas-block { margin-top: 1.25rem; }
 
         .canvas-label {
             font-size: 0.75rem;
@@ -410,17 +401,90 @@
 
         canvas {
             width: 100%;
-            height: 80px;
+            height: 75px;
             background: #070a10;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-subtle);
             display: block;
         }
 
-        /* ── Right Panel: Active Banking & Inquiry Gates ──────────── */
+        /* ── Right Panel: Conversational Banking IVR Dialogue ──────── */
+        .dialogue-box {
+            height: 220px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.85rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            font-size: 0.82rem;
+        }
+
+        .msg-bubble {
+            max-width: 88%;
+            padding: 0.55rem 0.85rem;
+            border-radius: var(--radius-md);
+            line-height: 1.4;
+        }
+
+        .msg-bot {
+            align-self: flex-start;
+            background: #16263f;
+            border: 1px solid var(--border-highlight);
+            color: #e2e8f0;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .heard-box {
+            margin-top: 0.75rem;
+            background: #0a111e;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .heard-label { color: var(--cyan); font-weight: 700; white-space: nowrap; }
+        .heard-text { color: var(--text-primary); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Chips for Quick Voice Simulation fallback */
+        .chips-container { margin-top: 0.75rem; }
+        .chips-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+        .chips-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+
+        .chip-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chip-btn:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: rgba(6, 182, 212, 0.1);
+        }
+
         .gate-banner {
             border-radius: var(--radius-md);
-            padding: 0.9rem;
+            padding: 0.75rem;
             text-align: center;
             border: 1px solid var(--green);
             background: rgba(16, 185, 129, 0.1);
@@ -428,7 +492,7 @@
         }
 
         .gate-state {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: var(--green);
             display: flex;
@@ -438,59 +502,30 @@
         }
 
         .gate-reason {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
-            margin-top: 0.3rem;
+            margin-top: 0.25rem;
         }
 
         .scenario-box {
-            margin-top: 1rem;
+            margin-top: 0.75rem;
             background: var(--bg-base);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 0.9rem;
+            padding: 0.75rem;
         }
 
         .scenario-title {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--cyan);
             text-transform: uppercase;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
+            margin-bottom: 0.4rem;
         }
-
-        .bank-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.78rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .bank-label { color: var(--text-muted); }
-        .bank-val { font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
-
-        .btn-action {
-            width: 100%;
-            padding: 0.65rem;
-            border-radius: var(--radius-md);
-            border: none;
-            font-size: 0.88rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 0.6rem;
-        }
-
-        .btn-green { background: var(--green); color: #042416; }
-        .btn-amber { background: var(--amber); color: #2b1d03; }
-        .btn-red { background: var(--red); color: white; cursor: not-allowed; }
 
         .supervisor-link {
             text-align: center;
-            margin-top: 0.75rem;
+            margin-top: 0.6rem;
             font-size: 0.75rem;
             color: var(--cyan);
             cursor: pointer;
@@ -622,7 +657,7 @@
             <div class="brand-icon">🛡️</div>
             <div class="brand-titles">
                 <h1>VOICE SHIELD <span class="brand-badge">Enterprise v2.0</span></h1>
-                <div class="brand-sub">Real-Time Voice Clone Detection & Automated Call Interception</div>
+                <div class="brand-sub">Hands-Free Conversational Voice Banking with Real-Time Deepfake Interception</div>
             </div>
         </div>
 
@@ -640,9 +675,9 @@
         </div>
     </header>
 
-    <!-- ── Clean Tabs (Without External Brand Mentions) ───────────── -->
+    <!-- ── Navigation Tabs ───────────────────────────────────────── -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('tab-live')">📞 Real-Time Call Interceptor</button>
+        <button class="tab-btn active" onclick="switchTab('tab-live')">📞 Interactive Voice Banking (Live)</button>
         <button class="tab-btn" onclick="switchTab('tab-forensics')">🔬 Acoustic Forensic Scanner</button>
         <button class="tab-btn" onclick="switchTab('tab-audit')">📜 Regulatory Compliance Vault</button>
     </div>
@@ -650,11 +685,11 @@
     <!-- ── Main Dashboard Content ────────────────────────────────── -->
     <main>
 
-        <!-- ── TAB 1: Real-Time Call Interceptor ─────────────────── -->
+        <!-- ── TAB 1: Real-Time Interactive Voice Banking ────────── -->
         <div id="tab-live" class="tab-content active">
             <div class="grid-dashboard">
 
-                <!-- Left: Dynamic Caller Setup & Stream Controls -->
+                <!-- Left: Dynamic Caller Ingest & Setup -->
                 <div class="card">
                     <div class="card-header">
                         <span class="card-title">🎙️ Telephony Ingest</span>
@@ -666,23 +701,22 @@
                     </button>
 
                     <div class="meta-stat-block">
-                        <!-- Dynamic Caller Selector -->
                         <div class="meta-item">
-                            <div class="meta-label">Select Caller Profile</div>
+                            <div class="meta-label">Calling Account Profile</div>
                             <select id="select-caller" class="select-input" onchange="onCallerProfileChanged()">
-                                <option value="ACC-550189|+91 98765 43210 (CEO Executive Line)">CEO Line (+91 98765 43210)</option>
-                                <option value="ACC-9948201|+91 98111 22334 (Treasury Desk)">Treasury Line (+91 98111 22334)</option>
-                                <option value="ACC-550189|+1 800 555 0199 (Suspicious VoIP)">Suspicious VoIP Gateway</option>
+                                <option value="ACC-550189|+91 98765 43210 (CEO Executive Line)">CEO Line (+91 98765 43210) [ACC-550189]</option>
+                                <option value="ACC-9948201|+91 98111 22334 (Treasury Desk)">Treasury Line (+91 98111 22334) [ACC-9948201]</option>
+                                <option value="ACC-550189|+1 800 555 0199 (Suspicious VoIP)">Suspicious VoIP Gateway [ACC-550189]</option>
                             </select>
                         </div>
 
                         <div class="meta-item">
-                            <div class="meta-label">Active Target Account</div>
+                            <div class="meta-label">Target Account ID</div>
                             <input type="text" id="input-account-num" class="select-input" value="ACC-550189">
                         </div>
 
                         <div class="meta-item">
-                            <div class="meta-label">Caller ID / Line</div>
+                            <div class="meta-label">Caller Phone Line</div>
                             <input type="text" id="input-caller-line" class="select-input" value="+91 98765 43210 (CEO Executive Line)">
                         </div>
 
@@ -692,7 +726,7 @@
                         </div>
 
                         <div class="meta-item">
-                            <div class="meta-label">Session ID</div>
+                            <div class="meta-label">Active Session ID</div>
                             <div class="meta-value" id="disp-call-id">STANDBY</div>
                         </div>
                     </div>
@@ -736,13 +770,39 @@
                     </div>
                 </div>
 
-                <!-- Right: Active Banking & Inquiry Gates -->
+                <!-- Right: Hands-Free Conversational Banking IVR Dialogue -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">🏦 Active Call Interception Gate</span>
+                        <span class="card-title">🤖 Conversational Banking IVR</span>
+                        <span id="ivr-status-pill" class="brand-badge">Standby</span>
                     </div>
 
-                    <div id="gate-banner" class="gate-banner">
+                    <!-- Live Dialogue Chat Stream -->
+                    <div id="dialogue-container" class="dialogue-box">
+                        <div class="msg-bubble msg-bot">
+                            👋 Welcome to Voice Shield Banking. Click <strong>"Start Live Call"</strong> to speak naturally with the AI IVR.
+                        </div>
+                    </div>
+
+                    <!-- Live Speech Recognition Transcript -->
+                    <div class="heard-box">
+                        <span class="heard-label">🎤 Heard:</span>
+                        <span id="live-heard-text" class="heard-text">Listening for speech...</span>
+                    </div>
+
+                    <!-- Quick Voice Simulation Chips (Fallback for noisy rooms) -->
+                    <div class="chips-container">
+                        <span class="chips-label">Quick Voice Simulation:</span>
+                        <div class="chips-row">
+                            <button class="chip-btn" onclick="simulateVoiceInput('yes')">🗣️ "Yes, confirm"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')">🗣️ "Check Balance"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('authorize wire transfer of 25 lakhs')">🗣️ "Transfer ₹25L"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Max')">🗣️ "Max"</button>
+                        </div>
+                    </div>
+
+                    <!-- Fraud Gate Banner -->
+                    <div id="gate-banner" class="gate-banner" style="margin-top: 0.85rem;">
                         <div class="gate-state" id="gate-state-text">
                             <span>✅</span> APPROVED
                         </div>
@@ -751,32 +811,10 @@
                         </div>
                     </div>
 
-                    <!-- Action 1: High Value Wire Transfer -->
-                    <div class="scenario-box">
-                        <div class="scenario-title">💸 Wire Transfer Operation</div>
-                        <div class="bank-row">
-                            <span class="bank-label">Beneficiary:</span>
-                            <span class="bank-val">ABC Corp Ltd</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">Amount:</span>
-                            <span class="bank-val">₹ 25,00,000</span>
-                        </div>
-                        <button id="btn-transfer" class="btn-action btn-green" onclick="attemptWireTransfer()">
-                            Authorize Wire Transfer
-                        </button>
-                    </div>
-
-                    <!-- Action 2: Confidential Details / Balance Inquiry -->
-                    <div class="scenario-box">
-                        <div class="scenario-title">ℹ️ Account Balance & Detail Inquiry</div>
-                        <div class="bank-row">
-                            <span class="bank-label">Inquiry:</span>
-                            <span class="bank-val">Full Balance & Ledger</span>
-                        </div>
-                        <button id="btn-inquiry" class="btn-action btn-green" onclick="attemptAccountInquiry()">
-                            Request Account Balance
-                        </button>
+                    <!-- Action Result Card (Balance / Wire Transfer Receipt) -->
+                    <div id="banking-result-card" class="scenario-box" style="display: none;">
+                        <div class="scenario-title" id="res-card-title">ℹ️ Action Result</div>
+                        <div id="res-card-body" style="font-size: 0.82rem; line-height: 1.4;"></div>
                     </div>
 
                     <div class="supervisor-link" onclick="openSupervisorModal()">
@@ -875,24 +913,6 @@
 
     </main>
 
-    <!-- ── Interactive Security Question Modal (AMBER Challenge) ─ -->
-    <div id="modal-sec-question" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-title">🔐 Step-Up Security Check Required</div>
-            <div class="modal-body" id="sec-q-prompt">
-                Elevated voice anomaly detected. Please answer your registered security question to verify your identity.
-            </div>
-            <div style="font-weight: 700; color: var(--cyan); margin-bottom: 0.75rem;" id="disp-security-question">
-                Question: What is your first pet's name?
-            </div>
-            <input type="text" id="input-sec-answer" class="modal-input" placeholder="Type your answer here (e.g. Max)">
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeSecQuestionModal()">Cancel (Hangup)</button>
-                <button class="btn-primary" onclick="submitSecurityAnswer()">Verify Identity</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ── Supervisor Override Modal ───────────────────────────────── -->
     <div id="modal-supervisor" class="modal-overlay">
         <div class="modal">
@@ -916,6 +936,7 @@
         let micStream = null;
         let ws = null;
         let scriptNode = null;
+        let speechRec = null;
         let callStartTime = 0;
         let timerInterval = null;
 
@@ -925,11 +946,16 @@
         let latestRisk = 5.0;
         let currentTier = "GREEN";
         let isFrozen = false;
-        let hasSpokenAmber = false;
-        let hasSpokenRed = false;
 
-        // ── Text-to-Speech Voice Prompts ─────────────────────────────
-        function speakVoicePrompt(text) {
+        // Conversational Dialogue State Machine
+        // Stages: IDLE -> AWAIT_CONFIRM -> AWAIT_INTENT -> AWAIT_SECURITY_Q -> COMPLETED / TERMINATED
+        let dialogueStage = "IDLE";
+        let pendingAction = null; // "BALANCE" or "TRANSFER"
+        let activeSecurityQuestion = "What is your first pet's name?";
+
+        // ── Speech Synthesis Voice Prompts ────────────────────────────
+        function speakBot(text) {
+            appendDialogue("bot", text);
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utter = new SpeechSynthesisUtterance(text);
@@ -937,6 +963,15 @@
                 utter.pitch = 1.0;
                 window.speechSynthesis.speak(utter);
             }
+        }
+
+        function appendDialogue(sender, text) {
+            const container = document.getElementById('dialogue-container');
+            const bubble = document.createElement('div');
+            bubble.className = `msg-bubble ${sender === 'bot' ? 'msg-bot' : 'msg-user'}`;
+            bubble.innerHTML = `${sender === 'bot' ? '🤖 ' : '👤 '}${text}`;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
         }
 
         // ── Caller Profile Selector ──────────────────────────────────
@@ -955,7 +990,7 @@
             document.getElementById(tabId).classList.add('active');
         }
 
-        // ── Real-Time Mic Streaming & WebSocket ──────────────────────
+        // ── Live Call Ingest & Speech Recognition ────────────────────
         async function toggleLiveStream() {
             if (isStreaming) {
                 stopLiveStream("CALL_ENDED_BY_USER");
@@ -965,13 +1000,11 @@
         }
 
         async function startLiveStream() {
-            hasSpokenAmber = false;
-            hasSpokenRed = false;
-
             const accNum = document.getElementById('input-account-num').value.trim() || 'ACC-550189';
             const callerLine = document.getElementById('input-caller-line').value.trim();
 
             try {
+                // 1. Microphone capture for AASIST WebSocket streaming
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
                 const source = audioCtx.createMediaStreamSource(micStream);
@@ -992,6 +1025,11 @@
                     btn.className = 'btn-live-stream recording';
                     document.getElementById('mic-icon').innerText = '⏹️';
                     document.getElementById('mic-text').innerText = 'End Live Call';
+                    document.getElementById('ivr-status-pill').innerText = 'In Call';
+
+                    // Start Conversational IVR Dialogue Flow
+                    dialogueStage = "AWAIT_CONFIRM";
+                    speakBot(`Welcome to Secure Banking. I see you are calling from ${callerLine.split('(')[0]}, linked to account ${accNum}. Please say 'Yes' to confirm.`);
                 };
 
                 ws.onmessage = (event) => {
@@ -1006,9 +1044,7 @@
                 scriptNode.onaudioprocess = (e) => {
                     if (!isStreaming || ws.readyState !== WebSocket.OPEN) return;
                     const channelData = e.inputBuffer.getChannelData(0);
-                    for (let i = 0; i < channelData.length; i++) {
-                        pcmBuffer.push(channelData[i]);
-                    }
+                    for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
                     if (pcmBuffer.length >= SAMPLES_PER_CHUNK) {
                         const chunk = pcmBuffer.splice(0, SAMPLES_PER_CHUNK);
@@ -1025,28 +1061,63 @@
                 source.connect(scriptNode);
                 scriptNode.connect(audioCtx.destination);
 
+                // 2. Initialize Speech Recognition for Hands-Free Voice Commands
+                initSpeechRecognition();
+
             } catch (err) {
                 alert(`Microphone access error: ${err.message}\nPlease open http://localhost:8000.`);
             }
         }
 
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+                speechRec = new SpeechClass();
+                speechRec.continuous = true;
+                speechRec.interimResults = true;
+                speechRec.lang = 'en-IN';
+
+                speechRec.onresult = (e) => {
+                    let interim = '';
+                    for (let i = e.resultIndex; i < e.results.length; ++i) {
+                        if (e.results[i].isFinal) {
+                            const spoken = e.results[i][0].transcript.trim();
+                            document.getElementById('live-heard-text').innerText = spoken;
+                            handleVoiceInput(spoken);
+                        } else {
+                            interim += e.results[i][0].transcript;
+                        }
+                    }
+                    if (interim) document.getElementById('live-heard-text').innerText = interim;
+                };
+
+                speechRec.onerror = (err) => console.log('SpeechRec error:', err);
+                speechRec.onend = () => { if (isStreaming && speechRec) speechRec.start(); };
+                speechRec.start();
+            }
+        }
+
         function stopLiveStream(reason) {
             isStreaming = false;
+            dialogueStage = "IDLE";
             if (timerInterval) clearInterval(timerInterval);
             if (scriptNode) scriptNode.disconnect();
             if (micStream) micStream.getTracks().forEach(t => t.stop());
             if (audioCtx) audioCtx.close();
             if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+            if (speechRec) { speechRec.stop(); speechRec = null; }
 
             const btn = document.getElementById('btn-live-stream');
             if (reason === "AUTOCUT_RED") {
                 btn.className = 'btn-live-stream terminated';
                 document.getElementById('mic-icon').innerText = '🚫';
                 document.getElementById('mic-text').innerText = 'Call Cut (AI Blocked)';
+                document.getElementById('ivr-status-pill').innerText = 'Call Cut';
             } else {
                 btn.className = 'btn-live-stream';
                 document.getElementById('mic-icon').innerText = '🔴';
                 document.getElementById('mic-text').innerText = 'Start Live Call';
+                document.getElementById('ivr-status-pill').innerText = 'Standby';
             }
         }
 
@@ -1057,12 +1128,149 @@
             document.getElementById('disp-duration').innerText = `${m}:${s}`;
         }
 
-        // ── Telemetry & Auto-Hangup Logic ────────────────────────────
+        // ── Voice Input & Dialogue State Machine ─────────────────────
+        function simulateVoiceInput(text) {
+            handleVoiceInput(text);
+        }
+
+        async function handleVoiceInput(rawText) {
+            const text = rawText.toLowerCase().trim();
+            appendDialogue("user", rawText);
+            const accNum = document.getElementById('input-account-num').value.trim();
+
+            // Stage 1: Awaiting Account Confirmation ("Yes")
+            if (dialogueStage === "AWAIT_CONFIRM") {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right')) {
+                    dialogueStage = "AWAIT_INTENT";
+                    speakBot("Account verified. How can I help you? You can say 'Check account balance' or 'Authorize wire transfer'.");
+                } else {
+                    speakBot("Please say 'Yes' to confirm this is your account, or choose another profile.");
+                }
+                return;
+            }
+
+            // Stage 2: Intent Selection (Balance vs Transfer)
+            if (dialogueStage === "AWAIT_INTENT") {
+                if (text.includes('balance') || text.includes('money') || text.includes('details') || text.includes('account')) {
+                    executeVoiceBalanceInquiry(accNum);
+                } else if (text.includes('transfer') || text.includes('send') || text.includes('lakh') || text.includes('wire')) {
+                    executeVoiceWireTransfer(accNum);
+                } else {
+                    speakBot("I can help you check your account balance or process a wire transfer. Which one would you like?");
+                }
+                return;
+            }
+
+            // Stage 3: Awaiting Security Question Answer (AMBER Challenge)
+            if (dialogueStage === "AWAIT_SECURITY_Q") {
+                await verifySecurityAnswerByVoice(text, accNum);
+                return;
+            }
+        }
+
+        // ── Voice Action: Check Balance ──────────────────────────────
+        async function executeVoiceBalanceInquiry(accNum) {
+            const res = await fetch('/api/v1/call/inquiry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ call_id: activeCallId, account_number: accNum })
+            });
+            const data = await res.json();
+
+            if (res.status === 200) {
+                // GREEN - Authorized
+                speakBot(`Your current available balance in account ${accNum} is twelve lakh forty thousand five hundred rupees. Voice integrity verified.`);
+                showResultCard("ℹ️ Account Balance Verified", `
+                    <strong>Account:</strong> ${data.account_number}<br>
+                    <strong>Owner:</strong> ${data.owner}<br>
+                    <strong>Available Balance:</strong> <span style="color: var(--green); font-weight:700;">${data.balance}</span><br>
+                    <strong>Voice Integrity:</strong> ${data.voice_integrity}
+                `);
+            } else if (res.status === 202) {
+                // AMBER - Challenge
+                pendingAction = "BALANCE";
+                dialogueStage = "AWAIT_SECURITY_Q";
+                speakBot(`Caution: Voice anomaly detected. Before I reveal your balance, please answer your security check: What is your first pet's name?`);
+            } else {
+                // RED - Cut
+                speakBot(data.voice_prompt || "Unauthorized access detected. Call terminated.");
+                stopLiveStream("AUTOCUT_RED");
+            }
+        }
+
+        // ── Voice Action: Wire Transfer ──────────────────────────────
+        async function executeVoiceWireTransfer(accNum) {
+            const res = await fetch('/api/v1/bank/transfer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    call_id: activeCallId,
+                    account_number: accNum,
+                    amount: 2500000.0,
+                    beneficiary: 'ABC Corp Ltd'
+                })
+            });
+            const data = await res.json();
+
+            if (res.status === 200) {
+                // GREEN - Authorized
+                speakBot(`Processing wire transfer of twenty-five lakh rupees to ABC Corp Ltd. Authorized successfully. Receipt TXN 9941.`);
+                showResultCard("💸 Wire Transfer Authorized", `
+                    <strong>Status:</strong> <span style="color: var(--green);">TRANSFER_SUCCESSFUL</span><br>
+                    <strong>Receipt ID:</strong> ${data.receipt_id}<br>
+                    <strong>Amount:</strong> ₹ 25,00,000.00<br>
+                    <strong>Beneficiary:</strong> ${data.beneficiary}<br>
+                    <strong>Voice Score:</strong> ${data.voice_integrity_score}
+                `);
+            } else if (res.status === 202) {
+                // AMBER - Challenge
+                pendingAction = "TRANSFER";
+                dialogueStage = "AWAIT_SECURITY_Q";
+                speakBot(`Caution: Voice anomaly detected. Before authorizing the wire transfer, please answer: What is your first pet's name?`);
+            } else {
+                // RED - Cut
+                speakBot("Unauthorized access detected: AI voice clone identified. Wire transfer blocked. Terminating call immediately.");
+                stopLiveStream("AUTOCUT_RED");
+            }
+        }
+
+        // ── Verify Security Question via Voice ───────────────────────
+        async function verifySecurityAnswerByVoice(spokenAnswer, accNum) {
+            const res = await fetch(`/api/v1/call/verify-question/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answer: spokenAnswer })
+            });
+            const data = await res.json();
+
+            if (res.status === 200) {
+                dialogueStage = "AWAIT_INTENT";
+                speakBot("Identity verified successfully. Proceeding with your request.");
+                updateGauge(5.0, 'GREEN');
+                updateFraudGateUI({ is_frozen: false, lock_reason: 'Security Check Passed' }, 'GREEN', 5.0);
+
+                // Execute the pending action
+                if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
+                else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum);
+                pendingAction = null;
+            } else {
+                speakBot("Security verification failed. Unauthorized access detected. Terminating call immediately.");
+                stopLiveStream("AUTOCUT_RED");
+            }
+        }
+
+        function showResultCard(title, html) {
+            const card = document.getElementById('banking-result-card');
+            document.getElementById('res-card-title').innerText = title;
+            document.getElementById('res-card-body').innerHTML = html;
+            card.style.display = 'block';
+        }
+
+        // ── Real-Time Acoustic Forensics Telemetry Update ────────────
         function handleTelemetryUpdate(data) {
             latestRisk = data.running_risk_pct || 5.0;
             currentTier = data.risk_tier || "GREEN";
             const gate = data.fraud_gate || {};
-            isFrozen = gate.is_frozen || false;
 
             updateGauge(latestRisk, currentTier);
 
@@ -1070,30 +1278,26 @@
             if (riskHistory.length > 60) riskHistory.shift();
             drawTimeline();
 
-            // 1. Check for RED / CUT_CALL
+            // 1. Instant Auto-Hangup on RED
             if (data.call_action === "CUT_CALL" || currentTier === "RED") {
-                if (!hasSpokenRed) {
-                    hasSpokenRed = true;
-                    speakVoicePrompt(data.voice_prompt || "Unauthorized access detected. Call terminated.");
-                }
+                speakBot(data.voice_prompt || "Unauthorized access detected. Call terminated.");
                 updateFraudGateUI(gate, "RED", latestRisk);
                 stopLiveStream("AUTOCUT_RED");
                 logAuditRecord(activeCallId, data.account_number, latestRisk, 'Voice Clone Detected', 'CALL_CUT_AND_FROZEN');
                 return;
             }
 
-            // 2. Check for AMBER / Security Challenge
+            // 2. AMBER Caution Challenge
             if (data.call_action === "CHALLENGE_AUTHENTICATION" || currentTier === "AMBER") {
-                if (!hasSpokenAmber) {
-                    hasSpokenAmber = true;
-                    speakVoicePrompt(data.voice_prompt || "Caution: Voice anomaly detected. Please verify your identity.");
-                    openSecQuestionModal(data.security_question || "What is your first pet's name?");
+                if (dialogueStage !== "AWAIT_SECURITY_Q") {
+                    dialogueStage = "AWAIT_SECURITY_Q";
+                    speakBot("Caution: Elevated voice anomaly detected. Please say your security check: What is your first pet's name?");
                 }
                 updateFraudGateUI(gate, "AMBER", latestRisk);
                 return;
             }
 
-            // 3. GREEN
+            // 3. GREEN Safe
             updateFraudGateUI(gate, "GREEN", latestRisk);
         }
 
@@ -1136,8 +1340,6 @@
             const banner = document.getElementById('gate-banner');
             const stateText = document.getElementById('gate-state-text');
             const reasonText = document.getElementById('gate-reason-text');
-            const btnT = document.getElementById('btn-transfer');
-            const btnI = document.getElementById('btn-inquiry');
 
             if (gate.is_frozen || tier === 'RED') {
                 banner.style.borderColor = 'var(--red)';
@@ -1145,136 +1347,22 @@
                 stateText.innerHTML = '<span>🚨</span> CALL CUT & ACCOUNT LOCKED';
                 stateText.style.color = 'var(--red)';
                 reasonText.innerText = gate.lock_reason || 'Unauthorized voice clone detected. Call terminated.';
-
-                btnT.className = 'btn-action btn-red';
-                btnT.innerText = '🔒 Wire Transfer Blocked';
-                btnT.disabled = true;
-
-                btnI.className = 'btn-action btn-red';
-                btnI.innerText = '🚫 Inquiry Blocked';
-                btnI.disabled = true;
             } else if (tier === 'AMBER') {
                 banner.style.borderColor = 'var(--amber)';
                 banner.style.background = 'var(--amber-glow)';
                 stateText.innerHTML = '<span>⚠️</span> CAUTION: CHALLENGE REQUIRED';
                 stateText.style.color = 'var(--amber)';
                 reasonText.innerText = 'Voice variance elevated. Answer security question to proceed.';
-
-                btnT.className = 'btn-action btn-amber';
-                btnT.innerText = '⚠️ Security Verification Required';
-                btnT.disabled = false;
-
-                btnI.className = 'btn-action btn-amber';
-                btnI.innerText = '⚠️ Security Verification Required';
-                btnI.disabled = false;
             } else {
                 banner.style.borderColor = 'var(--green)';
                 banner.style.background = 'var(--green-glow)';
                 stateText.innerHTML = '<span>✅</span> APPROVED';
                 stateText.style.color = 'var(--green)';
                 reasonText.innerText = 'Authentic caller voice patterns confirmed.';
-
-                btnT.className = 'btn-action btn-green';
-                btnT.innerText = 'Authorize Wire Transfer';
-                btnT.disabled = false;
-
-                btnI.className = 'btn-action btn-green';
-                btnI.innerText = 'Request Account Balance';
-                btnI.disabled = false;
             }
         }
 
-        // ── Scenario 1: Wire Transfer Attempt ────────────────────────
-        async function attemptWireTransfer() {
-            if (!activeCallId) activeCallId = `CALL-DEMO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            const accNum = document.getElementById('input-account-num').value.trim();
-
-            const res = await fetch('/api/v1/bank/transfer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    call_id: activeCallId,
-                    account_number: accNum,
-                    amount: 2500000.0,
-                    beneficiary: 'ABC Corp Ltd'
-                })
-            });
-
-            const data = await res.json();
-            if (res.status === 200) {
-                alert(`✅ WIRE TRANSFER SUCCESSFUL!\nReceipt: ${data.receipt_id}\nAmount: ₹25,00,000 Transferred.\nVoice Score: ${data.voice_integrity_score}`);
-            } else if (res.status === 202) {
-                speakVoicePrompt("Caution: Security verification required before transfer.");
-                openSecQuestionModal("What is your first pet's name?");
-            } else {
-                speakVoicePrompt("Transfer blocked. Unauthorized access detected.");
-                alert(`🚨 TRANSFER BLOCKED!\nReason: ${data.detail?.reason || 'Voice Clone Detected'}\nAction: ${data.detail?.action}`);
-            }
-        }
-
-        // ── Scenario 2: Account Balance & Detail Inquiry ─────────────
-        async function attemptAccountInquiry() {
-            if (!activeCallId) activeCallId = `CALL-DEMO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            const accNum = document.getElementById('input-account-num').value.trim();
-
-            const res = await fetch('/api/v1/call/inquiry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    call_id: activeCallId,
-                    account_number: accNum
-                })
-            });
-
-            const data = await res.json();
-            if (res.status === 200) {
-                alert(`ℹ️ ACCOUNT DETAILS CONFIRMED:\nAccount: ${data.account_number}\nOwner: ${data.owner}\nAvailable Balance: ${data.balance}\nVoice Status: ${data.voice_integrity}`);
-            } else if (res.status === 202) {
-                speakVoicePrompt(data.voice_prompt || "Caution: Please verify your identity with your security question.");
-                openSecQuestionModal(data.security_question || "What is your first pet's name?");
-            } else {
-                speakVoicePrompt(data.voice_prompt || "Unauthorized access detected. Call terminated.");
-                alert(`🚨 INQUIRY REJECTED!\nReason: Account blocked due to voice cloning threat.`);
-                stopLiveStream("AUTOCUT_RED");
-            }
-        }
-
-        // ── Security Question Modal Handlers ─────────────────────────
-        function openSecQuestionModal(question) {
-            document.getElementById('disp-security-question').innerText = `Security Question: ${question}`;
-            document.getElementById('modal-sec-question').style.display = 'flex';
-        }
-
-        function closeSecQuestionModal() {
-            document.getElementById('modal-sec-question').style.display = 'none';
-        }
-
-        async function submitSecurityAnswer() {
-            const answer = document.getElementById('input-sec-answer').value.trim();
-            if (!answer) return;
-
-            const res = await fetch(`/api/v1/call/verify-question/${activeCallId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ answer: answer })
-            });
-
-            const data = await res.json();
-            closeSecQuestionModal();
-
-            if (res.status === 200) {
-                speakVoicePrompt("Identity verified. You may proceed.");
-                alert("✅ SECURITY CHECK PASSED! Transaction & Inquiry Authorized.");
-                updateGauge(5.0, 'GREEN');
-                updateFraudGateUI({ is_frozen: false, lock_reason: 'Security Check Passed' }, 'GREEN', 5.0);
-            } else {
-                speakVoicePrompt(data.voice_prompt || "Security check failed. Unauthorized access detected. Terminating call.");
-                alert("❌ SECURITY CHECK FAILED! Account locked and call cut.");
-                stopLiveStream("AUTOCUT_RED");
-            }
-        }
-
-        // ── Supervisor Override Modal ────────────────────────────────
+        // ── Supervisor Override ──────────────────────────────────────
         function openSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'flex'; }
         function closeSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'none'; }
         async function submitSupervisorOverride() {
@@ -1292,7 +1380,7 @@
             closeSupervisorModal();
             updateGauge(5.0, 'GREEN');
             updateFraudGateUI({ is_frozen: false, lock_reason: `Unfrozen by Supervisor #${supId}` }, 'GREEN', 5.0);
-            alert(`✅ Account ${accNum} Unlocked by Supervisor #${supId}.`);
+            speakBot(`Account ${accNum} has been unlocked by supervisor.`);
         }
 
         // ── Forensic Audio File Scanner ──────────────────────────────
@@ -1304,10 +1392,7 @@
             formData.append('call_id', `INSPECT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
             formData.append('stream_by_chunks', 'true');
 
-            const res = await fetch('/api/v1/call/upload-audio', {
-                method: 'POST',
-                body: formData
-            });
+            const res = await fetch('/api/v1/call/upload-audio', { method: 'POST', body: formData });
             const data = await res.json();
 
             document.getElementById('forensic-result').style.display = 'block';
@@ -1401,7 +1486,6 @@
             tbody.prepend(row);
         }
 
-        // Window resize canvas listener
         function resizeCanvases() {
             document.querySelectorAll('canvas').forEach(c => {
                 c.width = c.clientWidth * window.devicePixelRatio;
