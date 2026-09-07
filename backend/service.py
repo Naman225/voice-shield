@@ -1,12 +1,9 @@
 """
 backend/service.py
 ------------------
-Call session lifecycle manager.
-
-Changes from Nikunj's original:
-- AcousticScorer (AASIST model) is loaded ONCE in CallSessionManager
-  and shared across all sessions to avoid re-loading the model per call.
-- ActiveCallSession receives the shared scorer via dependency injection.
+Call session lifecycle manager & Stateful Account Fraud Registry.
+Controls call interception, auto-hangup on RED, AMBER security challenges,
+and cross-session account lockout for repeat attackers.
 """
 
 import time
@@ -20,6 +17,68 @@ from backend.risk_engine import EMARiskEngine
 from backend.fraud_gate  import FraudPreventionGate
 
 
+class AccountFraudRegistry:
+    """
+    Stateful banking account security registry.
+    Tracks account balances, security challenge questions, lockouts,
+    and blocks repeat attackers immediately without requiring RAG.
+    """
+    def __init__(self):
+        self.accounts = {
+            "ACC-550189": {
+                "owner": "Executive Line (+91 98765 43210)",
+                "balance": 1240500.0,
+                "is_locked": False,
+                "lock_reason": None,
+                "locked_timestamp": None,
+                "security_question": "What is your first pet's name?",
+                "security_answer": "Max",
+                "attack_count": 0
+            },
+            "ACC-9948201": {
+                "owner": "Treasury Line (+91 98111 22334)",
+                "balance": 4850000.0,
+                "is_locked": False,
+                "lock_reason": None,
+                "locked_timestamp": None,
+                "security_question": "What was the name of your first school?",
+                "security_answer": "St. Xavier's",
+                "attack_count": 0
+            }
+        }
+
+    def get_account(self, account_number: str) -> dict:
+        if account_number not in self.accounts:
+            self.accounts[account_number] = {
+                "owner": f"User ({account_number})",
+                "balance": 750000.0,
+                "is_locked": False,
+                "lock_reason": None,
+                "locked_timestamp": None,
+                "security_question": "What is your favorite city?",
+                "security_answer": "Mumbai",
+                "attack_count": 0
+            }
+        return self.accounts[account_number]
+
+    def lock_account(self, account_number: str, reason: str):
+        acc = self.get_account(account_number)
+        acc["is_locked"] = True
+        acc["lock_reason"] = reason
+        acc["locked_timestamp"] = time.time()
+        acc["attack_count"] += 1
+
+    def unlock_account(self, account_number: str):
+        acc = self.get_account(account_number)
+        acc["is_locked"] = False
+        acc["lock_reason"] = None
+        acc["locked_timestamp"] = None
+
+
+# Global singleton account registry
+account_registry = AccountFraudRegistry()
+
+
 class ActiveCallSession:
     """Represents a single live telephone / VoIP call session being monitored."""
 
@@ -28,7 +87,7 @@ class ActiveCallSession:
         call_id:        str,
         caller_id:      str,
         account_number: str,
-        scorer:         AcousticScorer,          # shared, pre-loaded model
+        scorer:         AcousticScorer,
     ):
         self.call_id        = call_id
         self.caller_id      = caller_id
@@ -37,7 +96,7 @@ class ActiveCallSession:
 
         self.normalizer  = AudioNormalizer()
         self.buffer      = SlidingAudioBuffer()
-        self.scorer      = scorer                # injected — NOT re-loaded here
+        self.scorer      = scorer
         self.risk_engine = EMARiskEngine()
         self.fraud_gate  = FraudPreventionGate()
 
@@ -45,19 +104,44 @@ class ActiveCallSession:
         self.latest_frame_score     = 0.05
         self.running_risk_pct       = 5.0
         self.current_tier           = "GREEN"
+        self.is_terminated          = False
 
     def process_audio_chunk(
         self,
         pcm_samples:       np.ndarray,
         sample_rate:       int  = 16000,
-        is_simulated_clone: bool = False,   # kept for backward-compat, ignored by AASIST scorer
+        is_simulated_clone: bool = False,
     ) -> Dict[str, Any]:
         """
-        Ingest a raw PCM chunk, update sliding buffer, run AASIST inference
-        when the 4.04 s window is ready, update EMA risk, and evaluate the
-        fraud prevention gate.
+        Ingest audio chunk, update sliding buffer, execute AASIST,
+        and trigger auto-cut or security challenges.
         """
         self.total_chunks_processed += 1
+        duration_sec = round(time.time() - self.start_time, 1)
+
+        # 0. Check if account is ALREADY locked from a previous attack
+        acc = account_registry.get_account(self.account_number)
+        if acc["is_locked"]:
+            self.is_terminated = True
+            return {
+                "call_id":            self.call_id,
+                "caller_id":          self.caller_id,
+                "account_number":     self.account_number,
+                "duration_sec":       duration_sec,
+                "chunks_ingested":    self.total_chunks_processed,
+                "samples_in_buffer":  len(self.buffer._buffer),
+                "latest_frame_score": 100.0,
+                "running_risk_pct":   100.0,
+                "risk_tier":          "RED",
+                "fraud_gate": {
+                    "state": "LOCKED_FREEZE",
+                    "is_frozen": True,
+                    "lock_reason": f"Repeat attack blocked. Account {self.account_number} is locked."
+                },
+                "call_action": "CUT_CALL",
+                "voice_prompt": f"Unauthorized access: Account {self.account_number} is locked due to a recent voice clone attack. Terminating call immediately.",
+                "security_question": None
+            }
 
         # 1. Normalise to mono @ 16 kHz
         mono_samples = self.normalizer.to_mono(pcm_samples)
@@ -67,19 +151,36 @@ class ActiveCallSession:
         # 2. Push into sliding buffer
         self.buffer.push_samples(mono_samples)
 
-        # 3. Run AASIST inference once the 4.04 s window is filled
+        # 3. Run AASIST inference once 4.04 s window is filled
         if self.buffer.is_window_ready():
             window_audio = self.buffer.get_latest_window()
             self.latest_frame_score = self.scorer.score_frame(window_audio)
-
-            # 4. Update EMA risk score → tier
             self.running_risk_pct, self.current_tier = self.risk_engine.update_risk(
                 self.latest_frame_score
             )
 
-        # 5. Evaluate active fraud prevention gate
-        gate_status  = self.fraud_gate.evaluate_gate(self.running_risk_pct, self.current_tier)
-        duration_sec = round(time.time() - self.start_time, 1)
+        # 4. Evaluate Fraud Gate
+        gate_status = self.fraud_gate.evaluate_gate(self.running_risk_pct, self.current_tier)
+
+        # 5. Interactive Call Interception Decisions
+        call_action = "CONTINUE"
+        voice_prompt = None
+        security_q = None
+
+        if self.current_tier == "RED" or gate_status.get("is_frozen"):
+            # Lock account across future calls
+            account_registry.lock_account(
+                self.account_number,
+                f"Critical voice clone detected (Risk: {self.running_risk_pct:.1f}%)"
+            )
+            self.is_terminated = True
+            call_action = "CUT_CALL"
+            voice_prompt = "Unauthorized user access detected: synthetic voice clone identified. Terminating call immediately."
+
+        elif self.current_tier == "AMBER":
+            call_action = "CHALLENGE_AUTHENTICATION"
+            security_q = acc["security_question"]
+            voice_prompt = f"Caution: Elevated voice anomaly detected. Please verify your identity: {security_q}"
 
         return {
             "call_id":            self.call_id,
@@ -92,6 +193,9 @@ class ActiveCallSession:
             "running_risk_pct":   self.running_risk_pct,
             "risk_tier":          self.current_tier,
             "fraud_gate":         gate_status,
+            "call_action":        call_action,
+            "voice_prompt":       voice_prompt,
+            "security_question":  security_q,
         }
 
     def get_summary(self) -> Dict[str, Any]:
@@ -106,16 +210,12 @@ class ActiveCallSession:
             "risk_tier":        self.current_tier,
             "fraud_gate":       self.fraud_gate.get_status(),
             "risk_history":     self.risk_engine.get_history(),
+            "is_terminated":    self.is_terminated,
         }
 
 
 class CallSessionManager:
-    """
-    Manages active call sessions across the backend service.
-
-    The AASIST model is loaded ONCE here and shared across all sessions.
-    This avoids the ~3-second model-load penalty per incoming call.
-    """
+    """Manages active call sessions across the backend service."""
 
     def __init__(self):
         import torch
@@ -133,7 +233,7 @@ class CallSessionManager:
             call_id=call_id,
             caller_id=caller_id,
             account_number=account_number,
-            scorer=self.scorer,              # pass the shared model in
+            scorer=self.scorer,
         )
         self.sessions[call_id] = session
         return session

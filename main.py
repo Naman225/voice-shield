@@ -103,6 +103,15 @@ class VerifyOTPRequest(BaseModel):
     otp: str = Field(..., description="6-digit One Time Password for secondary verification")
 
 
+class VerifySecurityQuestionRequest(BaseModel):
+    answer: str = Field(..., description="Answer to security question")
+
+
+class AccountInquiryRequest(BaseModel):
+    call_id: str = Field(..., description="Active call monitoring session ID")
+    account_number: str = Field(default="ACC-550189", description="Source bank account ID to inquire")
+
+
 # -------------------------------------------------------------
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
@@ -345,6 +354,104 @@ def verify_otp(call_id: str, req: VerifyOTPRequest):
     }
 
 
+@app.post("/api/v1/call/inquiry")
+def inquire_account_details(req: AccountInquiryRequest):
+    """
+    Simulates inquiring about confidential bank account balance and details.
+    Protected by Voice Shield real-time acoustic forensics:
+    - 🔴 RED (Voice Clone): Returns 403, triggers auto-cut voice prompt, locks account.
+    - 🟡 AMBER (Caution): Returns 202, challenges with security question before balance reveal.
+    - 🟢 GREEN (Authentic Human): Returns 200 with verified account balance.
+    """
+    session = session_manager.get_session(req.call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Active call session '{req.call_id}' not found.")
+
+    from backend.service import account_registry
+    acc = account_registry.get_account(req.account_number)
+
+    if acc["is_locked"] or session.current_tier == "RED":
+        return JSONResponse(
+            status_code=403,
+            content={
+                "status": "INQUIRY_DENIED_UNAUTHORIZED",
+                "call_action": "CUT_CALL",
+                "reason": "VOICE_CLONE_ATTACK_DETECTED",
+                "voice_prompt": "Unauthorized access detected: synthetic voice clone identified. Terminating call immediately.",
+                "message": "Account inquiry blocked due to voice clone detection. Session terminated."
+            }
+        )
+
+    if session.current_tier == "AMBER":
+        return JSONResponse(
+            status_code=202,
+            content={
+                "status": "INQUIRY_CHALLENGE_REQUIRED",
+                "call_action": "CHALLENGE_AUTHENTICATION",
+                "security_question": acc["security_question"],
+                "voice_prompt": f"Caution: Voice anomaly detected. Please verify your identity: {acc['security_question']}",
+                "message": "Security verification required before confidential account details are disclosed."
+            }
+        )
+
+    return {
+        "status": "INQUIRY_SUCCESSFUL",
+        "account_number": req.account_number,
+        "owner": acc["owner"],
+        "balance": f"₹ {acc['balance']:,.2f}",
+        "account_status": "ACTIVE_VERIFIED",
+        "voice_integrity": f"{100.0 - session.running_risk_pct:.1f}% (Authentic Human Caller)",
+        "message": "Identity verified. Confidential details cleared."
+    }
+
+
+@app.post("/api/v1/call/verify-question/{call_id}")
+def verify_security_question(call_id: str, req: VerifySecurityQuestionRequest):
+    """
+    Verifies the user's answer to their security question (e.g. pet name, school).
+    - If correct: Clears caution state and authorizes transactions/inquiries.
+    - If incorrect: Escalates to RED, cuts call, and locks account.
+    """
+    session = session_manager.get_session(call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Active call session '{call_id}' not found.")
+
+    from backend.service import account_registry
+    acc = account_registry.get_account(session.account_number)
+
+    if req.answer.strip().lower() != acc["security_answer"].strip().lower():
+        session.current_tier = "RED"
+        session.fraud_gate.evaluate_gate(99.0, "RED")
+        account_registry.lock_account(session.account_number, "Failed security question challenge under voice caution.")
+        return JSONResponse(
+            status_code=403,
+            content={
+                "status": "CHALLENGE_FAILED_UNAUTHORIZED",
+                "call_action": "CUT_CALL",
+                "voice_prompt": "Security verification failed. Unauthorized access detected. Terminating call immediately.",
+                "message": "Incorrect answer. Account locked and call cut."
+            }
+        )
+
+    session.fraud_gate.manual_override_unfreeze("SECURITY-QUESTION-VERIFIED")
+    session.current_tier = "GREEN"
+    session.running_risk_pct = 5.0
+    return {
+        "status": "CHALLENGE_PASSED",
+        "call_action": "CONTINUE",
+        "voice_prompt": "Identity successfully verified. You may proceed.",
+        "message": "Security check passed. Transaction and inquiry authorized."
+    }
+
+
+@app.post("/api/v1/account/unlock/{account_number}")
+def unlock_account(account_number: str):
+    """Supervisor endpoint to unlock an account locked due to repeat attacks."""
+    from backend.service import account_registry
+    account_registry.unlock_account(account_number)
+    return {"status": "ACCOUNT_UNLOCKED", "account_number": account_number}
+
+
 # -------------------------------------------------------------
 # WEBSOCKET REAL-TIME AUDIO STREAMING (FOR MIC & VOIP)
 # -------------------------------------------------------------
@@ -357,13 +464,20 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
     """
     await websocket.accept()
 
+    query_params = websocket.query_params
+    acc_num = query_params.get("account", "ACC-550189")
+    caller = query_params.get("caller_id", "Executive Line (+91 98765 43210)")
+
     session = session_manager.get_session(call_id)
     if not session:
         session = session_manager.create_session(
             call_id=call_id,
-            caller_id="VoIP Incoming Channel",
-            account_number="ACC-550189",
+            caller_id=caller,
+            account_number=acc_num,
         )
+    else:
+        session.account_number = acc_num
+        session.caller_id = caller
 
     try:
         while True:
@@ -372,6 +486,10 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
 
             samples = message.get("samples", [])
             sample_rate = message.get("sample_rate", 16000)
+            if "account_number" in message:
+                session.account_number = message["account_number"]
+            if "caller_id" in message:
+                session.caller_id = message["caller_id"]
 
             if samples:
                 pcm_array = np.array(samples, dtype=np.float32)
