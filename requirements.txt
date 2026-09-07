@@ -3,6 +3,7 @@ fastapi>=0.100.0
 uvicorn>=0.22.0
 pydantic>=2.0
 websockets>=11.0
+python-multipart>=0.0.9
 
 # ── Deep Learning (AASIST Model) ────────────────────────────────────────────
 torch>=2.0.0
