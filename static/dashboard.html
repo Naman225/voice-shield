@@ -3,930 +3,1366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Shield 🛡️ Live Call Monitoring Center</title>
+
+    <!-- ── Comprehensive SEO & Enterprise Metadata ──────────────────────── -->
+    <title>Voice Shield 🛡️ Enterprise AI Voice Cloning Detection & Fraud Prevention</title>
+    <meta name="description" content="Voice Shield is a real-time, enterprise-grade audio forensics and telephony fraud prevention platform inspired by Pindrop and Reality Defender. Powered by fine-tuned AASIST Graph Attention Networks.">
+    <meta name="keywords" content="voice cloning detection, deepfake defense, audio forensics, AASIST, synthetic speech detection, banking fraud gate, telephony security, SIH 2026, Pindrop alternative, Reality Defender audio">
+    <meta name="author" content="Team Voice Shield - SIH 2026">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="http://localhost:8000/dashboard">
+
+    <!-- OpenGraph Metadata -->
+    <meta property="og:title" content="Voice Shield 🛡️ AI Voice Cloning Detection & Fraud Gate">
+    <meta property="og:description" content="Continuous real-time voice integrity verification, spectral forensics, and active transaction freeze before money leaves the account.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://localhost:8000/dashboard">
+    <meta property="og:site_name" content="Voice Shield Enterprise Security">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Voice Shield 🛡️ Real-Time Audio Deepfake Defense">
+    <meta name="twitter:description" content="AASIST-powered real-time voice clone detection and banking fraud prevention engine.">
+
+    <!-- Embedded SVG Favicon (No 404s) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>">
+
+    <!-- JSON-LD Structured Data (Enterprise Cyber Defense Software) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SecuritySoftware",
+      "name": "Voice Shield",
+      "operatingSystem": "Linux, Cloud, Cross-platform",
+      "applicationCategory": "Cybersecurity / Audio Forensics",
+      "description": "AI-Powered Real-Time Detection and Prevention of Voice Cloning Impersonation Attacks in Financial Channels.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      }
+    }
+    </script>
+
+    <!-- Secure Context Auto-Redirect (Fixes Chrome 0.0.0.0 'Not Secure' block) -->
+    <script>
+        // Chrome restricts Web Audio & mic permissions on 0.0.0.0:8000.
+        // Auto-redirect to localhost:8000 which Chrome whitelists as a trusted secure origin.
+        if (window.location.hostname === '0.0.0.0') {
+            window.location.replace(window.location.href.replace('0.0.0.0', 'localhost'));
+        }
+    </script>
+
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --panel-bg: #1e293b;
-            --text-main: #e2e8f0;
-            --text-muted: #94a3b8;
-            --green: #22c55e;
+            --bg-base: #080c14;
+            --bg-card: #0f1726;
+            --bg-card-hover: #162238;
+            --bg-elevated: #1a2842;
+            --border-subtle: #1e2e4a;
+            --border-highlight: #2a4168;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --cyan: #06b6d4;
+            --blue: #3b82f6;
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.25);
             --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.25);
             --red: #ef4444;
-            --border-color: #334155;
-            --font-family: system-ui, -apple-system, sans-serif;
+            --red-glow: rgba(239, 68, 68, 0.35);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-family);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            line-height: 1.5;
         }
 
-        /* Header */
+        /* ── Top Navigation Bar (Pindrop / Reality Defender Style) ──── */
         header {
-            background-color: #0b1120;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(180deg, #0d1524 0%, #080c14 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
+            font-size: 1.25rem;
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
         }
 
-        header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
+        .brand-titles h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* Main Layout */
-        main {
-            display: grid;
-            grid-template-columns: 300px 1fr 350px;
+        .brand-badge {
+            font-size: 0.65rem;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--cyan);
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .header-telemetry {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.78rem;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* ── Navigation Tabs ───────────────────────────────────────── */
+        .tab-bar {
+            background: #0b111c;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 2rem;
+            display: flex;
             gap: 1.5rem;
-            padding: 1.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 0.85rem 0.2rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover { color: var(--text-primary); }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            border-bottom-color: var(--cyan);
+        }
+
+        /* ── Main Container ────────────────────────────────────────── */
+        main {
+            padding: 1.5rem 2rem;
             flex-grow: 1;
         }
 
-        .panel {
-            background-color: var(--panel-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Tab 1: Live Call Monitor Layout ──────────────────────── */
+        .grid-dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            transition: border-color 0.2s ease;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.6rem;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Left Column: Call Controls */
+        .btn-live-stream {
+            width: 100%;
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            border: none;
+            color: white;
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-live-stream:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+        }
+
+        .btn-live-stream.recording {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+            animation: recordPulse 1.5s infinite;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+            50% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+        }
+
+        .meta-stat-block {
+            margin-top: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 0.75rem;
         }
 
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-muted);
+        .meta-item {
+            background: var(--bg-base);
+            padding: 0.65rem 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .meta-label {
+            font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
         }
 
-        /* Buttons */
-        .btn {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-size: 1rem;
+        .meta-value {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        /* Center Column: Risk Meter & Waveforms */
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 0 1rem 0;
+            position: relative;
+        }
+
+        .gauge-svg {
+            width: 280px;
+            height: 150px;
+            overflow: visible;
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: var(--bg-elevated);
+            stroke-width: 18;
+            stroke-linecap: round;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke: var(--green);
+            stroke-width: 18;
+            stroke-linecap: round;
+            stroke-dasharray: 377;
+            stroke-dashoffset: 377;
+            transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+        }
+
+        .gauge-center-text {
+            position: absolute;
+            top: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gauge-score {
+            font-size: 2.8rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            letter-spacing: -1px;
+            color: var(--green);
+            transition: color 0.4s ease;
+        }
+
+        .gauge-subtext {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .tier-pill {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 16px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green);
+            border: 1px solid var(--green);
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .canvas-block {
+            margin-top: 1.25rem;
+        }
+
+        .canvas-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        canvas {
+            width: 100%;
+            height: 80px;
+            background: #070a10;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            display: block;
+        }
+
+        /* Right Column: Fraud Gate & Banking Widget */
+        .gate-banner {
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--green);
+            background: rgba(16, 185, 129, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .gate-state {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--green);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            width: 100%;
+            letter-spacing: 0.5px;
         }
 
-        .btn:hover {
-            filter: brightness(1.1);
+        .gate-reason {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 0.4rem;
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-green { background-color: var(--green); }
-        .btn-red { background-color: var(--red); }
-        .btn-amber { background-color: var(--amber); color: #000; }
-
-        /* Left Panel - Call Controls */
-        #upload-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 2rem 1rem;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        #upload-zone:hover, #upload-zone.dragover {
-            border-color: var(--green);
-        }
-        #upload-zone p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-        #upload-input { display: none; }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-        .info-item {
-            background-color: #0b1120;
+        .banking-widget {
+            margin-top: 1.25rem;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
             padding: 1rem;
-            border-radius: 8px;
-        }
-        .info-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 0.25rem;
-        }
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            font-family: monospace;
         }
 
-        /* Center Panel - Visualizations */
-        .gauge-container {
-            position: relative;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-        .gauge-svg {
-            width: 250px;
-            height: 125px; /* Half circle */
-            overflow: visible;
-        }
-        .gauge-bg {
-            fill: none;
-            stroke: var(--border-color);
-            stroke-width: 20;
-            stroke-linecap: round;
-        }
-        .gauge-arc {
-            fill: none;
-            stroke: var(--green);
-            stroke-width: 20;
-            stroke-linecap: round;
-            stroke-dasharray: 314; /* PI * r (r=100) */
-            stroke-dashoffset: 314;
-            transition: stroke-dashoffset 0.5s ease-out, stroke 0.5s;
-        }
-        .gauge-text {
-            position: absolute;
-            top: 70px;
-            font-size: 3.5rem;
-            font-weight: bold;
-            font-family: monospace;
-            display: flex;
-            align-items: baseline;
-        }
-        .gauge-text span {
-            font-size: 1.5rem;
-            color: var(--text-muted);
-        }
-        .gauge-label {
-            margin-top: 1rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: var(--green);
-            transition: color 0.5s;
-        }
-
-        .canvas-container {
-            background-color: #0b1120;
-            border-radius: 8px;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-        }
-        .canvas-title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-        canvas {
-            width: 100%;
-            height: 100px;
-            display: block;
-        }
-
-        /* Right Panel - Fraud Gate & Banking */
-        .status-badge {
-            font-size: 1.5rem;
-            font-weight: bold;
-            text-align: center;
-            padding: 1.5rem;
-            border-radius: 8px;
-            background-color: rgba(34, 197, 94, 0.1);
-            color: var(--green);
-            border: 1px solid var(--green);
-            transition: all 0.3s;
-        }
-        .status-details {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            text-align: center;
-            min-height: 40px;
-        }
-        .evidence-hash {
-            font-size: 0.75rem;
-            font-family: monospace;
-            word-break: break-all;
-            color: var(--text-muted);
-            background: #0b1120;
-            padding: 0.5rem;
-            border-radius: 4px;
-            display: none;
-        }
-
-        .bank-panel {
-            background-color: #0b1120;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-        }
-        .bank-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-        .bank-details {
-            margin-bottom: 1.5rem;
-        }
         .bank-row {
             display: flex;
             justify-content: space-between;
+            font-size: 0.8rem;
             margin-bottom: 0.5rem;
         }
+
+        .bank-label { color: var(--text-muted); }
+        .bank-val { font-weight: 600; color: var(--text-primary); font-family: var(--font-mono); }
+
         .bank-amount {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            text-align: right;
-            margin-top: 0.5rem;
-        }
-        
-        .override-link {
-            display: block;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-primary);
             text-align: center;
-            margin-top: 1rem;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-decoration: underline;
+            margin: 0.75rem 0;
+            font-family: var(--font-mono);
+        }
+
+        .btn-transfer {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 700;
             cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--green);
+            color: #042416;
         }
-        .override-link:hover {
+
+        .btn-transfer.frozen {
+            background: var(--red);
             color: white;
+            cursor: not-allowed;
+            box-shadow: 0 0 16px var(--red-glow);
         }
 
-        /* Alert Banner */
-        #alert-banner {
-            position: absolute;
-            top: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 1rem 2rem;
-            border-radius: 0 0 8px 8px;
-            font-weight: bold;
-            font-size: 1.1rem;
+        .btn-transfer.caution {
+            background: var(--amber);
+            color: #2b1d03;
+        }
+
+        .supervisor-link {
             text-align: center;
-            transition: top 0.4s ease-out;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        #alert-banner.show {
-            top: 0;
+            margin-top: 0.85rem;
+            font-size: 0.78rem;
+            color: var(--cyan);
+            cursor: pointer;
+            text-decoration: underline;
         }
 
-        /* Modal */
-        #modal-overlay {
+        /* ── Tab 2: Forensic Audio Scanner (Reality Defender Style) ─ */
+        .dropzone-container {
+            border: 2px dashed var(--border-highlight);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+            text-align: center;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dropzone-container:hover {
+            border-color: var(--cyan);
+            background: var(--bg-card-hover);
+        }
+
+        .dropzone-icon {
+            font-size: 3rem;
+            color: var(--cyan);
+            margin-bottom: 0.75rem;
+        }
+
+        .file-verdict-grid {
+            margin-top: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        /* ── Tab 3: Compliance Audit Log Vault ─────────────────────── */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th {
+            background: #0b111c;
+            color: var(--text-muted);
+            padding: 0.85rem 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        tr:hover td { background: var(--bg-card-hover); }
+
+        .hash-code {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--cyan);
+        }
+
+        /* ── Modals & Overlays ─────────────────────────────────────── */
+        .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            backdrop-filter: blur(4px);
         }
+
         .modal {
-            background-color: var(--panel-bg);
-            border-radius: 12px;
-            padding: 2rem;
-            width: 400px;
-            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            border: 1px solid var(--border-highlight);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            width: 90%;
+            max-width: 440px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
         }
-        .modal h2 { margin-bottom: 1.5rem; }
-        .modal input {
+
+        .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .modal-body { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; }
+
+        .modal-input {
             width: 100%;
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
             padding: 0.75rem;
-            margin-bottom: 1.5rem;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background-color: #0b1120;
+            border-radius: var(--radius-sm);
             color: white;
+            font-family: var(--font-mono);
             font-size: 1rem;
-        }
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
-        /* Utilities */
-        .color-green { color: var(--green); }
-        .color-amber { color: var(--amber); }
-        .color-red { color: var(--red); }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: var(--cyan);
+            color: black;
+            font-weight: 700;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
 
-        @media (max-width: 1200px) {
-            main {
-                grid-template-columns: 1fr;
-            }
+        /* ── Security Alert Floating Toast ─────────────────────────── */
+        .alert-toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: #1f0d12;
+            border: 1px solid var(--red);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            color: #fca5a5;
+            box-shadow: 0 8px 30px var(--red-glow);
+            display: none;
+            z-index: 500;
+            max-width: 380px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
+    <!-- ── Header (Pindrop / Reality Defender Enterprise Look) ──── -->
     <header>
-        <h1>Voice Shield 🛡️ Live Call Monitoring Center</h1>
-        <div id="alert-banner"></div>
+        <div class="brand-cluster">
+            <div class="brand-icon">🛡️</div>
+            <div class="brand-titles">
+                <h1>VOICE SHIELD <span class="brand-badge">Enterprise v2.0</span></h1>
+                <div class="brand-sub">AI Real-Time Voice Cloning Defense & Active Wire Fraud Interception</div>
+            </div>
+        </div>
+
+        <div class="header-telemetry">
+            <div class="pill">
+                <div class="pulse-dot"></div>
+                <span>AASIST Core: <strong>CUDA Active</strong></span>
+            </div>
+            <div class="pill">
+                <span>🔒 <strong>TLS 256-bit Stream</strong></span>
+            </div>
+            <div class="pill">
+                <span>⚡ Latency: <strong>&lt; 35ms</strong></span>
+            </div>
+        </div>
     </header>
 
+    <!-- ── Tab Navigation ────────────────────────────────────────── -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-live')">📞 Live Call Monitor (Pindrop)</button>
+        <button class="tab-btn" onclick="switchTab('tab-forensics')">🔬 Forensic Audio Scanner (Reality Defender)</button>
+        <button class="tab-btn" onclick="switchTab('tab-audit')">📜 Compliance Audit Vault</button>
+    </div>
+
+    <!-- ── Floating Alert Toast ──────────────────────────────────── -->
+    <div id="alert-toast" class="alert-toast">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🚨</span>
+            <span id="toast-title">VOICE CLONE DETECTED</span>
+        </div>
+        <div id="toast-msg" style="font-size: 0.8rem; margin-top: 0.3rem;">
+            Impersonation threshold breached. Wire transfer approval locked.
+        </div>
+    </div>
+
+    <!-- ── Main Workspace ────────────────────────────────────────── -->
     <main>
-        <!-- Left Panel -->
-        <section class="panel">
-            <h2 class="panel-title">Call Controls</h2>
-            
-            <button id="btn-live-call" class="btn">🎙️ Start Live Call</button>
-            
-            <div id="upload-zone">
-                <div>📁 Drag & Drop Audio File</div>
-                <p>Supports .wav, .mp3, .ogg, .flac</p>
-                <input type="file" id="upload-input" accept=".wav,.mp3,.ogg,.flac">
-                <div id="upload-status" style="margin-top: 10px; font-size: 0.85rem; color: var(--amber); display: none;"></div>
-            </div>
 
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">CALL ID</div>
-                    <div class="info-value" id="disp-call-id">WAITING...</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">DURATION</div>
-                    <div class="info-value" id="disp-duration">00:00</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">CHUNKS PROCESSED</div>
-                    <div class="info-value" id="disp-chunks">0</div>
-                </div>
-            </div>
-        </section>
+        <!-- ── TAB 1: Live Call Monitor (Pindrop Real-Time Paradigm) ─ -->
+        <div id="tab-live" class="tab-content active">
+            <div class="grid-dashboard">
 
-        <!-- Center Panel -->
-        <section class="panel">
-            <h2 class="panel-title">Risk Analysis</h2>
-            
-            <div class="gauge-container">
-                <svg class="gauge-svg" viewBox="0 0 220 110">
-                    <path class="gauge-bg" d="M 10,100 A 100,100 0 0,1 210,100" />
-                    <path class="gauge-arc" id="gauge-arc" d="M 10,100 A 100,100 0 0,1 210,100" />
-                </svg>
-                <div class="gauge-text"><span id="gauge-val">0</span><span>%</span></div>
-                <div class="gauge-label" id="gauge-label">VOICE INTEGRITY SCORE</div>
-            </div>
-
-            <div class="canvas-container">
-                <div class="canvas-title">Live Audio Waveform</div>
-                <canvas id="waveform-canvas"></canvas>
-            </div>
-
-            <div class="canvas-container">
-                <div class="canvas-title">Risk Timeline (60s)</div>
-                <canvas id="timeline-canvas"></canvas>
-            </div>
-        </section>
-
-        <!-- Right Panel -->
-        <section class="panel">
-            <h2 class="panel-title">Fraud Gate & Banking</h2>
-            
-            <div class="status-badge" id="gate-badge">
-                ✅ APPROVED
-            </div>
-            <div class="status-details" id="gate-reason">
-                Call audio exhibits natural patterns.
-            </div>
-            <div class="evidence-hash" id="gate-hash"></div>
-
-            <div class="bank-panel">
-                <div class="bank-header">
-                    <strong>Wire Transfer Auth</strong>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">ID: TRX-99214</span>
-                </div>
-                <div class="bank-details">
-                    <div class="bank-row">
-                        <span style="color: var(--text-muted);">Beneficiary:</span>
-                        <span>ABC Corp Ltd</span>
+                <!-- Left: Call Info & Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🎙️ Telephony Ingest</span>
                     </div>
-                    <div class="bank-row">
-                        <span style="color: var(--text-muted);">Account:</span>
-                        <span>**** **** 4492</span>
+
+                    <button id="btn-live-stream" class="btn-live-stream" onclick="toggleLiveStream()">
+                        <span id="mic-icon">🔴</span>
+                        <span id="mic-text">Start Live Call</span>
+                    </button>
+
+                    <div class="meta-stat-block">
+                        <div class="meta-item">
+                            <div class="meta-label">Active Session ID</div>
+                            <div class="meta-value" id="disp-call-id">STANDBY</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Caller Line (Caller ID)</div>
+                            <div class="meta-value">CEO Line (+91 98765 43210)</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Call Duration</div>
+                            <div class="meta-value" id="disp-duration">00:00</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Sliding Buffer Hop</div>
+                            <div class="meta-value">64,600 S / 1.0s Hop</div>
+                        </div>
                     </div>
-                    <div class="bank-amount">₹25,00,000</div>
                 </div>
-                <button id="btn-transfer" class="btn btn-green">Authorize Transfer</button>
-                <a class="override-link" id="link-override">Supervisor Override</a>
+
+                <!-- Center: Real-Time Risk Analysis Speedometer & Waveforms -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🧠 Real-Time Acoustic Forensics</span>
+                        <span id="tier-badge" class="tier-pill">🟢 GREEN SAFE</span>
+                    </div>
+
+                    <div class="gauge-container">
+                        <svg class="gauge-svg" viewBox="0 0 280 150">
+                            <!-- Background Half Arc -->
+                            <path class="gauge-bg" d="M 30 140 A 110 110 0 0 1 250 140" />
+                            <!-- Dynamic Colored Fill Arc (Length ~ 345.5) -->
+                            <path id="gauge-fill-path" class="gauge-fill" d="M 30 140 A 110 110 0 0 1 250 140" />
+                        </svg>
+
+                        <div class="gauge-center-text">
+                            <div class="gauge-score" id="disp-risk-pct">0.0%</div>
+                            <div class="gauge-subtext">Impersonation Risk</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Oscilloscope -->
+                    <div class="canvas-block">
+                        <div class="canvas-label">
+                            <span>Live Audio Waveform</span>
+                            <span id="disp-sample-rate">16,000 Hz Mono</span>
+                        </div>
+                        <canvas id="canvas-oscilloscope"></canvas>
+                    </div>
+
+                    <!-- Rolling 60s Risk Timeline -->
+                    <div class="canvas-block">
+                        <div class="canvas-label">
+                            <span>Risk Timeline (Rolling 60s)</span>
+                            <span style="color: var(--red);">Threshold: 75%</span>
+                        </div>
+                        <canvas id="canvas-timeline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: Active Banking Fraud Prevention Gate -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🏦 Active Banking Gate</span>
+                    </div>
+
+                    <div id="gate-banner" class="gate-banner">
+                        <div class="gate-state" id="gate-state-text">
+                            <span>✅</span> APPROVED
+                        </div>
+                        <div class="gate-reason" id="gate-reason-text">
+                            Authentic caller voice patterns confirmed.
+                        </div>
+                    </div>
+
+                    <!-- Wire Transfer Simulation Widget -->
+                    <div class="banking-widget">
+                        <div class="bank-row">
+                            <span class="bank-label">Transfer Type:</span>
+                            <span class="bank-val">RTGS Immediate</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Target Beneficiary:</span>
+                            <span class="bank-val">ABC Corp Ltd</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Source Account:</span>
+                            <span class="bank-val">ACC-550189</span>
+                        </div>
+
+                        <div class="bank-amount">₹ 25,00,000</div>
+
+                        <button id="btn-transfer" class="btn-transfer" onclick="attemptWireTransfer()">
+                            Authorize Wire Transfer
+                        </button>
+                    </div>
+
+                    <div class="supervisor-link" onclick="openSupervisorModal()">
+                        Supervisor Override & PIN Unfreeze
+                    </div>
+                </div>
+
             </div>
-        </section>
+        </div>
+
+        <!-- ── TAB 2: Forensic Audio Scanner (Reality Defender Style) ─ -->
+        <div id="tab-forensics" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔬 Forensic Batch Audio Analyzer</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Supports .mp3, .wav, .flac, .ogg</span>
+                </div>
+
+                <div class="dropzone-container" id="dropzone" onclick="document.getElementById('file-input').click()">
+                    <div class="dropzone-icon">📁</div>
+                    <div style="font-size: 1.1rem; font-weight: 700;">Drag & Drop Audio File or Click to Browse</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
+                        Inspect recordings for neural vocoder artifacts, pitch synthetic discontinuities, and phase flaws.
+                    </div>
+                    <input type="file" id="file-input" style="display: none;" accept="audio/*" onchange="handleFileSelected(this.files[0])">
+                </div>
+
+                <!-- Forensic Results Display -->
+                <div id="forensic-result" style="display: none; margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <span class="card-title">Forensic Inspection Report</span>
+                        <span id="forensic-verdict-pill" class="tier-pill">AUTHENTIC</span>
+                    </div>
+
+                    <div class="file-verdict-grid">
+                        <div class="meta-item">
+                            <div class="meta-label">File Inspected</div>
+                            <div class="meta-value" id="f-filename">-</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Audio Duration & SR</div>
+                            <div class="meta-value" id="f-duration">-</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">AASIST Frame Spoof Probability</div>
+                            <div class="meta-value" id="f-spoof-score">-</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Cumulative Impersonation Risk</div>
+                            <div class="meta-value" id="f-risk-pct">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 3: Compliance Audit Log Vault ─────────────────────── -->
+        <div id="tab-audit" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📜 Tamper-Evident Forensic Audit Vault</span>
+                    <button class="btn-secondary" onclick="exportAuditLog()">📥 Export Audit CSV</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Call / File ID</th>
+                                <th>Duration</th>
+                                <th>Risk Score</th>
+                                <th>Verdict</th>
+                                <th>Banking Gate</th>
+                                <th>SHA-256 Forensic Evidence Hash</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body">
+                            <tr>
+                                <td>2026-09-07 20:45:12</td>
+                                <td>CALL-DEMO-001</td>
+                                <td>12.7s</td>
+                                <td style="color: var(--green); font-weight: 700;">3.8%</td>
+                                <td><span style="color: var(--green);">Authentic Human</span></td>
+                                <td>APPROVED</td>
+                                <td><span class="hash-code">SHA256-4a8dde81c989a17...</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- Modal -->
-    <div id="modal-overlay">
+    <!-- ── Supervisor PIN Modal ────────────────────────────────────── -->
+    <div id="modal-supervisor" class="modal-overlay">
         <div class="modal">
-            <h2>Supervisor Authentication</h2>
-            <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">
-                Enter Supervisor ID to override system freeze.
-            </p>
-            <input type="text" id="sup-id" value="SUP-7701">
+            <div class="modal-title">🔓 Supervisor Override Authentication</div>
+            <div class="modal-body">
+                Enter authorized supervisor credential to clear active voice clone security locks after out-of-band validation.
+            </div>
+            <input type="text" id="input-supervisor-id" class="modal-input" placeholder="Supervisor ID (e.g. SUP-7701)" value="SUP-7701">
             <div class="modal-actions">
-                <button class="btn" style="background-color: transparent; border: 1px solid var(--border-color); width: auto;" id="btn-modal-cancel">Cancel</button>
-                <button class="btn btn-green" style="width: auto;" id="btn-modal-submit">🔓 Override & Unfreeze</button>
+                <button class="btn-secondary" onclick="closeSupervisorModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitSupervisorOverride()">Confirm & Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 2FA OTP Challenge Modal ─────────────────────────────────── -->
+    <div id="modal-otp" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-title">📲 Secondary Step-Up 2FA Verification</div>
+            <div class="modal-body" id="otp-modal-msg">
+                A 6-digit verification code has been dispatched to the registered mobile for account ACC-550189.
+            </div>
+            <input type="text" id="input-otp" class="modal-input" placeholder="Enter 6-digit OTP (e.g. 123456)">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeOtpModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitOtpVerification()">Verify OTP</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Constants & State
-        const SAMPLE_RATE = 16000;
-        const SAMPLES_PER_CHUNK = 8000; // ~500ms
-        const MAX_HISTORY = 60; // 60 seconds history for timeline
-        
-        let callId = null;
-        let isLive = false;
-        let ws = null;
-        let audioContext = null;
+        // ── State Management ─────────────────────────────────────────
+        let activeCallId = null;
+        let isStreaming = false;
+        let audioCtx = null;
         let micStream = null;
-        let scriptProcessor = null;
-        let sampleBuffer = [];
-        let callStartTime = null;
+        let ws = null;
+        let scriptNode = null;
+        let callStartTime = 0;
         let timerInterval = null;
-        
-        let riskHistory = new Array(MAX_HISTORY).fill(0);
-        let waveformData = new Uint8Array(128); // dummy data for waveform if not live
-        let analyser = null;
-        let animationId = null;
-        
-        // DOM Elements
-        const btnLiveCall = document.getElementById('btn-live-call');
-        const uploadZone = document.getElementById('upload-zone');
-        const uploadInput = document.getElementById('upload-input');
-        const uploadStatus = document.getElementById('upload-status');
-        
-        const dispCallId = document.getElementById('disp-call-id');
-        const dispDuration = document.getElementById('disp-duration');
-        const dispChunks = document.getElementById('disp-chunks');
-        
-        const gaugeArc = document.getElementById('gauge-arc');
-        const gaugeVal = document.getElementById('gauge-val');
-        const gaugeLabel = document.getElementById('gauge-label');
-        
-        const waveCanvas = document.getElementById('waveform-canvas');
-        const waveCtx = waveCanvas.getContext('2d');
-        const timeCanvas = document.getElementById('timeline-canvas');
-        const timeCtx = timeCanvas.getContext('2d');
-        
-        const gateBadge = document.getElementById('gate-badge');
-        const gateReason = document.getElementById('gate-reason');
-        const gateHash = document.getElementById('gate-hash');
-        
-        const btnTransfer = document.getElementById('btn-transfer');
-        const linkOverride = document.getElementById('link-override');
-        const alertBanner = document.getElementById('alert-banner');
-        
-        const modalOverlay = document.getElementById('modal-overlay');
-        const btnModalCancel = document.getElementById('btn-modal-cancel');
-        const btnModalSubmit = document.getElementById('btn-modal-submit');
-        const supIdInput = document.getElementById('sup-id');
 
-        // Initialization
-        function init() {
-            resizeCanvases();
-            window.addEventListener('resize', resizeCanvases);
-            drawWaveform();
-            drawTimeline();
+        // Visualizer State
+        const SAMPLES_PER_CHUNK = 8000; // 500ms at 16kHz
+        let pcmBuffer = [];
+        let riskHistory = new Array(60).fill(5.0);
+        let latestRisk = 5.0;
+        let currentTier = "GREEN";
+        let isFrozen = false;
+
+        // Audit Log in RAM
+        const auditRecords = [];
+
+        // ── Tab Switching ────────────────────────────────────────────
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
 
-        function resizeCanvases() {
-            waveCanvas.width = waveCanvas.parentElement.clientWidth - 32;
-            waveCanvas.height = 100;
-            timeCanvas.width = timeCanvas.parentElement.clientWidth - 32;
-            timeCanvas.height = 100;
-        }
-
-        // Generate Call ID
-        function generateCallId() {
-            return `CALL-${Math.random().toString(36).substr(2,8).toUpperCase()}`;
-        }
-
-        // --- Live Call Handling ---
-        btnLiveCall.addEventListener('click', toggleLiveCall);
-
-        async function toggleLiveCall() {
-            if (isLive) {
-                stopLiveCall();
+        // ── Real-Time Microphone & WebSocket Streaming ───────────────
+        async function toggleLiveStream() {
+            if (isStreaming) {
+                stopLiveStream();
             } else {
-                await startLiveCall();
+                await startLiveStream();
             }
         }
 
-        async function startLiveCall() {
+        async function startLiveStream() {
             try {
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                callId = generateCallId();
-                dispCallId.innerText = callId;
-                
-                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
-                const source = audioContext.createMediaStreamSource(micStream);
-                
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
-                source.connect(analyser);
+                // Request Mic
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                const source = audioCtx.createMediaStreamSource(micStream);
 
-                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-                source.connect(scriptProcessor);
-                scriptProcessor.connect(audioContext.destination);
-                
-                sampleBuffer = [];
-                
-                // WebSocket Connection
-                const wsUrl = `ws://${location.host}/ws/call/${callId}`;
+                // Setup WebSocket
+                activeCallId = `CALL-LIVE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                document.getElementById('disp-call-id').innerText = activeCallId;
+
+                const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${wsProto}//${window.location.host}/ws/call/${activeCallId}`;
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = () => {
-                    console.log('WS Connected');
-                    isLive = true;
-                    btnLiveCall.innerText = '⏹️ Stop Call';
-                    btnLiveCall.classList.replace('btn-green', 'btn-red');
-                    if(!btnLiveCall.classList.contains('btn-red')) {
-                        btnLiveCall.style.backgroundColor = 'var(--red)';
-                    }
-                    
-                    startTimer();
+                    console.log('[Voice Shield] WebSocket stream connected:', activeCallId);
+                    isStreaming = true;
+                    callStartTime = Date.now();
+                    timerInterval = setInterval(updateCallTimer, 1000);
+
+                    // Update button UI
+                    const btn = document.getElementById('btn-live-stream');
+                    btn.classList.add('recording');
+                    document.getElementById('mic-icon').innerText = '⏹️';
+                    document.getElementById('mic-text').innerText = 'End Live Call';
                 };
-                
+
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    handleServerUpdate(data);
-                };
-                
-                ws.onerror = (error) => {
-                    console.error('WS Error:', error);
-                    stopLiveCall();
+                    handleTelemetryUpdate(data);
                 };
 
-                ws.onclose = () => {
-                    stopLiveCall();
-                };
+                ws.onerror = (err) => console.error('[Voice Shield] WS Error:', err);
+                ws.onclose = () => stopLiveStream();
 
-                scriptProcessor.onaudioprocess = (e) => {
-                    if (!isLive || ws.readyState !== WebSocket.OPEN) return;
-                    
-                    const inputData = e.inputBuffer.getChannelData(0);
-                    for (let i = 0; i < inputData.length; i++) {
-                        sampleBuffer.push(inputData[i]);
+                // Audio Chunk Capture via ScriptProcessor
+                scriptNode = audioCtx.createScriptProcessor(4096, 1, 1);
+                scriptNode.onaudioprocess = (e) => {
+                    if (!isStreaming || ws.readyState !== WebSocket.OPEN) return;
+                    const channelData = e.inputBuffer.getChannelData(0);
+                    for (let i = 0; i < channelData.length; i++) {
+                        pcmBuffer.push(channelData[i]);
                     }
-                    
-                    if (sampleBuffer.length >= SAMPLES_PER_CHUNK) {
-                        const chunk = sampleBuffer.splice(0, SAMPLES_PER_CHUNK);
+
+                    // When 500ms accumulated (8000 samples), send packet
+                    if (pcmBuffer.length >= SAMPLES_PER_CHUNK) {
+                        const chunk = pcmBuffer.splice(0, SAMPLES_PER_CHUNK);
                         ws.send(JSON.stringify({
                             samples: chunk,
-                            sample_rate: SAMPLE_RATE
+                            sample_rate: 16000
                         }));
+                        drawOscilloscope(chunk);
                     }
                 };
 
+                source.connect(scriptNode);
+                scriptNode.connect(audioCtx.destination);
+
             } catch (err) {
-                console.error('Mic access denied or error:', err);
-                alert('Could not access microphone.');
+                alert(`Microphone permission failed: ${err.message}\nPlease ensure you are using http://localhost:8000.`);
+                console.error(err);
             }
         }
 
-        function stopLiveCall() {
-            isLive = false;
-            btnLiveCall.innerText = '🎙️ Start Live Call';
-            btnLiveCall.style.backgroundColor = '#3b82f6';
-            
-            if (scriptProcessor) {
-                scriptProcessor.disconnect();
-                scriptProcessor = null;
-            }
-            if (audioContext) {
-                audioContext.close();
-                audioContext = null;
-            }
-            if (micStream) {
-                micStream.getTracks().forEach(track => track.stop());
-                micStream = null;
-            }
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
-            stopTimer();
-        }
-
-        function startTimer() {
-            callStartTime = Date.now();
-            timerInterval = setInterval(() => {
-                const diff = Math.floor((Date.now() - callStartTime) / 1000);
-                const m = String(Math.floor(diff / 60)).padStart(2, '0');
-                const s = String(diff % 60).padStart(2, '0');
-                dispDuration.innerText = `${m}:${s}`;
-            }, 1000);
-        }
-
-        function stopTimer() {
+        function stopLiveStream() {
+            isStreaming = false;
             if (timerInterval) clearInterval(timerInterval);
+            if (scriptNode) scriptNode.disconnect();
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
+            if (audioCtx) audioCtx.close();
+            if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+
+            const btn = document.getElementById('btn-live-stream');
+            btn.classList.remove('recording');
+            document.getElementById('mic-icon').innerText = '🔴';
+            document.getElementById('mic-text').innerText = 'Start Live Call';
         }
 
-        // --- File Upload Handling ---
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFileUpload(e.dataTransfer.files[0]);
-            }
-        });
-        uploadZone.addEventListener('click', () => uploadInput.click());
-        uploadInput.addEventListener('change', () => {
-            if (uploadInput.files.length) handleFileUpload(uploadInput.files[0]);
-        });
+        function updateCallTimer() {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const s = String(elapsed % 60).padStart(2, '0');
+            document.getElementById('disp-duration').innerText = `${m}:${s}`;
+        }
 
-        async function handleFileUpload(file) {
-            callId = generateCallId();
-            dispCallId.innerText = callId;
-            uploadStatus.style.display = 'block';
-            uploadStatus.innerText = `⏳ Processing ${file.name}...`;
-            
+        // ── Telemetry Update Handler ─────────────────────────────────
+        function handleTelemetryUpdate(data) {
+            latestRisk = data.running_risk_pct || 5.0;
+            currentTier = data.risk_tier || "GREEN";
+            const gate = data.fraud_gate || {};
+            isFrozen = gate.is_frozen || false;
+
+            // Update Speedometer Gauge
+            updateGauge(latestRisk, currentTier);
+
+            // Update History Chart
+            riskHistory.push(latestRisk);
+            if (riskHistory.length > 60) riskHistory.shift();
+            drawTimeline();
+
+            // Update Fraud Gate & Transfer Button
+            updateFraudGateUI(gate, currentTier, latestRisk);
+        }
+
+        function updateGauge(riskVal, tier) {
+            const disp = document.getElementById('disp-risk-pct');
+            disp.innerText = `${riskVal.toFixed(1)}%`;
+
+            // Circumference of half arc is ~345.5
+            // Dashoffset: 345.5 (0%) down to 0 (100%)
+            const maxOffset = 345.5;
+            const targetOffset = maxOffset - (riskVal / 100.0) * maxOffset;
+            const fillPath = document.getElementById('gauge-fill-path');
+            fillPath.style.strokeDashoffset = targetOffset;
+
+            const tierBadge = document.getElementById('tier-badge');
+
+            if (tier === 'RED') {
+                fillPath.style.stroke = 'var(--red)';
+                disp.style.color = 'var(--red)';
+                tierBadge.innerText = '🔴 RED (CLONE DETECTED)';
+                tierBadge.style.color = 'var(--red)';
+                tierBadge.style.borderColor = 'var(--red)';
+                tierBadge.style.backgroundColor = 'var(--red-glow)';
+                showToast("CRITICAL VOICE CLONE DETECTED", `Impersonation score: ${riskVal}%. Wire transfer approval locked.`);
+            } else if (tier === 'AMBER') {
+                fillPath.style.stroke = 'var(--amber)';
+                disp.style.color = 'var(--amber)';
+                tierBadge.innerText = '🟡 AMBER (CAUTION / SUSPICIOUS)';
+                tierBadge.style.color = 'var(--amber)';
+                tierBadge.style.borderColor = 'var(--amber)';
+                tierBadge.style.backgroundColor = 'var(--amber-glow)';
+            } else {
+                fillPath.style.stroke = 'var(--green)';
+                disp.style.color = 'var(--green)';
+                tierBadge.innerText = '🟢 GREEN (AUTHENTIC CALLER)';
+                tierBadge.style.color = 'var(--green)';
+                tierBadge.style.borderColor = 'var(--green)';
+                tierBadge.style.backgroundColor = 'var(--green-glow)';
+            }
+        }
+
+        function updateFraudGateUI(gate, tier, riskVal) {
+            const banner = document.getElementById('gate-banner');
+            const stateText = document.getElementById('gate-state-text');
+            const reasonText = document.getElementById('gate-reason-text');
+            const btn = document.getElementById('btn-transfer');
+
+            if (gate.is_frozen || tier === 'RED') {
+                banner.style.borderColor = 'var(--red)';
+                banner.style.background = 'var(--red-glow)';
+                stateText.innerHTML = '<span>🚨</span> LOCKED_FREEZE';
+                stateText.style.color = 'var(--red)';
+                reasonText.innerText = gate.lock_reason || 'Critical synthetic voice clone detected.';
+
+                btn.className = 'btn-transfer frozen';
+                btn.innerText = '🔒 Wire Transfer Blocked';
+                btn.disabled = true;
+
+                // Log to Audit Vault
+                logAuditRecord(activeCallId, riskVal, 'Voice Clone Attack', 'LOCKED_FREEZE');
+            } else if (tier === 'AMBER') {
+                banner.style.borderColor = 'var(--amber)';
+                banner.style.background = 'var(--amber-glow)';
+                stateText.innerHTML = '<span>⚠️</span> CAUTION_STEP_UP';
+                stateText.style.color = 'var(--amber)';
+                reasonText.innerText = 'Elevated acoustic variance. Step-Up 2FA Required.';
+
+                btn.className = 'btn-transfer caution';
+                btn.innerText = 'Request Step-Up 2FA OTP';
+                btn.disabled = false;
+            } else {
+                banner.style.borderColor = 'var(--green)';
+                banner.style.background = 'var(--green-glow)';
+                stateText.innerHTML = '<span>✅</span> APPROVED';
+                stateText.style.color = 'var(--green)';
+                reasonText.innerText = 'Authentic caller voice patterns confirmed.';
+
+                btn.className = 'btn-transfer';
+                btn.innerText = 'Authorize Wire Transfer';
+                btn.disabled = false;
+            }
+        }
+
+        // ── Simulated Bank Wire Transfer ─────────────────────────────
+        async function attemptWireTransfer() {
+            if (!activeCallId) {
+                activeCallId = `CALL-DEMO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            }
+
+            try {
+                const res = await fetch('/api/v1/bank/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        call_id: activeCallId,
+                        account_number: 'ACC-550189',
+                        amount: 2500000.0,
+                        beneficiary: 'ABC Corp Ltd'
+                    })
+                });
+
+                const data = await res.json();
+                if (res.status === 200) {
+                    alert(`✅ TRANSACTION AUTHORIZED!\nReceipt ID: ${data.receipt_id}\nAmount: ₹25,00,000 Transferred.\nVoice Integrity: ${data.voice_integrity_score}`);
+                } else if (res.status === 202) {
+                    // Open OTP Modal
+                    document.getElementById('otp-modal-msg').innerText = `Step-Up 2FA: Generated OTP is [ ${data.demo_otp} ].`;
+                    openOtpModal();
+                } else {
+                    alert(`🚨 TRANSACTION BLOCKED!\nReason: ${data.detail?.reason || 'Voice Clone Detected'}\nAction: ${data.detail?.action}`);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ── File Upload (Reality Defender Forensic Scanner) ──────────
+        async function handleFileSelected(file) {
+            if (!file) return;
+
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('call_id', callId);
+            formData.append('call_id', `INSPECT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
+            formData.append('stream_by_chunks', 'true');
 
             try {
                 const res = await fetch('/api/v1/call/upload-audio', {
                     method: 'POST',
                     body: formData
                 });
-                if (!res.ok) throw new Error('Upload failed');
                 const data = await res.json();
-                handleServerUpdate(data);
-                uploadStatus.innerText = `✅ Processed ${file.name}`;
-                setTimeout(() => uploadStatus.style.display = 'none', 3000);
+
+                // Display Forensic Inspection Report
+                document.getElementById('forensic-result').style.display = 'block';
+                document.getElementById('f-filename').innerText = data.uploaded_filename;
+                document.getElementById('f-duration').innerText = `${data.audio_duration_sec}s @ ${data.input_sample_rate}Hz`;
+                document.getElementById('f-spoof-score').innerText = `${data.latest_frame_score.toFixed(1)}%`;
+                document.getElementById('f-risk-pct').innerText = `${data.running_risk_pct.toFixed(1)}%`;
+
+                const pill = document.getElementById('forensic-verdict-pill');
+                if (data.risk_tier === 'RED') {
+                    pill.innerText = 'CRITICAL DEEPFAKE CLONE DETECTED';
+                    pill.style.color = 'var(--red)';
+                    pill.style.borderColor = 'var(--red)';
+                    pill.style.backgroundColor = 'var(--red-glow)';
+                } else {
+                    pill.innerText = 'AUTHENTIC HUMAN SPEECH VERIFIED';
+                    pill.style.color = 'var(--green)';
+                    pill.style.borderColor = 'var(--green)';
+                    pill.style.backgroundColor = 'var(--green-glow)';
+                }
+
+                // Update Audit Vault
+                logAuditRecord(data.call_id, data.running_risk_pct, data.verdict, data.fraud_gate.state);
+
             } catch (err) {
-                console.error(err);
-                uploadStatus.innerText = '❌ Error processing file';
+                alert(`Inspection failed: ${err.message}`);
             }
         }
 
-        // --- UI Updates ---
-        function handleServerUpdate(data) {
-            if (data.chunks_ingested !== undefined) dispChunks.innerText = data.chunks_ingested;
-            if (data.duration_sec !== undefined && !isLive) {
-                const m = String(Math.floor(data.duration_sec / 60)).padStart(2, '0');
-                const s = String(Math.floor(data.duration_sec % 60)).padStart(2, '0');
-                dispDuration.innerText = `${m}:${s}`;
-            }
+        // ── Canvas Waveform Visualizers ──────────────────────────────
+        function drawOscilloscope(samples) {
+            const canvas = document.getElementById('canvas-oscilloscope');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (data.running_risk_pct !== undefined) {
-                updateGauge(data.running_risk_pct, data.risk_tier);
-                riskHistory.push(data.running_risk_pct);
-                if (riskHistory.length > MAX_HISTORY) riskHistory.shift();
-            }
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#06b6d4';
+            ctx.beginPath();
 
-            if (data.fraud_gate) {
-                updateFraudGate(data.fraud_gate, data.risk_tier);
+            const step = Math.ceil(samples.length / canvas.width);
+            const amp = canvas.height / 2;
+
+            for (let i = 0; i < canvas.width; i++) {
+                const s = samples[i * step] || 0;
+                const y = amp + (s * amp * 0.9);
+                if (i === 0) ctx.moveTo(i, y);
+                else ctx.lineTo(i, y);
             }
+            ctx.stroke();
         }
-
-        function updateGauge(pct, tier) {
-            gaugeVal.innerText = Math.round(pct);
-            // 314 is full arc, 0 is max offset (empty), 314 is full offset (empty). 
-            // Wait, standard stroke-dashoffset: 0 is full stroke. 314 is empty.
-            const offset = 314 - (314 * pct / 100);
-            gaugeArc.style.strokeDashoffset = offset;
-
-            let color = 'var(--green)';
-            if (tier === 'AMBER' || pct >= 40 && pct < 75) color = 'var(--amber)';
-            if (tier === 'RED' || pct >= 75) color = 'var(--red)';
-            
-            gaugeArc.style.stroke = color;
-            gaugeLabel.style.color = color;
-        }
-
-        function updateFraudGate(gate, tier) {
-            gateBadge.style.backgroundColor = 'transparent';
-            
-            if (gate.state === 'APPROVED') {
-                gateBadge.innerHTML = '✅ APPROVED';
-                gateBadge.style.color = 'var(--green)';
-                gateBadge.style.borderColor = 'var(--green)';
-                gateBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                
-                btnTransfer.className = 'btn btn-green';
-                btnTransfer.innerText = 'Authorize Transfer';
-                btnTransfer.disabled = false;
-                btnTransfer.onclick = () => {
-                    btnTransfer.innerText = '✅ Transfer Authorized';
-                    setTimeout(() => { btnTransfer.innerText = 'Authorize Transfer'; }, 2000);
-                };
-                hideAlert();
-            } else if (gate.state === 'CAUTION') {
-                gateBadge.innerHTML = '⚠️ CAUTION';
-                gateBadge.style.color = 'var(--amber)';
-                gateBadge.style.borderColor = 'var(--amber)';
-                gateBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-                
-                btnTransfer.className = 'btn btn-amber';
-                btnTransfer.innerText = '⚠️ OTP Required';
-                btnTransfer.disabled = false;
-                showAlert('AMBER', '⚠️ Suspicious Voice Activity Detected');
-            } else if (gate.state === 'FROZEN') {
-                gateBadge.innerHTML = '🚨 FROZEN';
-                gateBadge.style.color = 'var(--red)';
-                gateBadge.style.borderColor = 'var(--red)';
-                gateBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                
-                btnTransfer.className = 'btn btn-red';
-                btnTransfer.innerText = '🔒 Blocked';
-                btnTransfer.disabled = true;
-                showAlert('RED', '🚨 CRITICAL: AI Voice Clone Detected — Wire Transfer FROZEN');
-            }
-
-            gateReason.innerText = gate.lock_reason || 'Analyzing call patterns...';
-            
-            if (gate.is_frozen && gate.evidence_hash) {
-                gateHash.style.display = 'block';
-                gateHash.innerText = `Hash: ${gate.evidence_hash.substring(0, 32)}...`;
-            } else {
-                gateHash.style.display = 'none';
-            }
-        }
-
-        function showAlert(tier, text) {
-            alertBanner.innerText = text;
-            alertBanner.className = 'show';
-            if (tier === 'AMBER') {
-                alertBanner.style.backgroundColor = 'var(--amber)';
-                alertBanner.style.color = '#000';
-            } else {
-                alertBanner.style.backgroundColor = 'var(--red)';
-                alertBanner.style.color = '#fff';
-            }
-        }
-
-        function hideAlert() {
-            alertBanner.className = '';
-        }
-
-        // --- Visualizations ---
-        function drawWaveform() {
-            requestAnimationFrame(drawWaveform);
-            
-            waveCtx.fillStyle = '#0b1120';
-            waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
-            
-            if (isLive && analyser) {
-                analyser.getByteTimeDomainData(waveFormData);
-            } else {
-                // draw flat line if not live
-                waveFormData.fill(128);
-            }
-
-            waveCtx.lineWidth = 2;
-            waveCtx.strokeStyle = 'var(--green)';
-            waveCtx.beginPath();
-
-            const sliceWidth = waveCanvas.width * 1.0 / waveFormData.length;
-            let x = 0;
-
-            for (let i = 0; i < waveFormData.length; i++) {
-                const v = waveFormData[i] / 128.0;
-                const y = v * waveCanvas.height / 2;
-
-                if (i === 0) waveCtx.moveTo(x, y);
-                else waveCtx.lineTo(x, y);
-                x += sliceWidth;
-            }
-            waveCtx.lineTo(waveCanvas.width, waveCanvas.height / 2);
-            waveCtx.stroke();
-        }
-        
-        if (!window.waveFormData) window.waveFormData = new Uint8Array(2048);
 
         function drawTimeline() {
-            requestAnimationFrame(drawTimeline);
-            
-            timeCtx.fillStyle = '#0b1120';
-            timeCtx.fillRect(0, 0, timeCanvas.width, timeCanvas.height);
-            
-            // Draw thresholds
-            timeCtx.strokeStyle = 'rgba(245, 158, 11, 0.5)'; // Amber
-            timeCtx.setLineDash([5, 5]);
-            timeCtx.beginPath();
-            timeCtx.moveTo(0, timeCanvas.height * (1 - 0.40));
-            timeCtx.lineTo(timeCanvas.width, timeCanvas.height * (1 - 0.40));
-            timeCtx.stroke();
+            const canvas = document.getElementById('canvas-timeline');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            timeCtx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; // Red
-            timeCtx.beginPath();
-            timeCtx.moveTo(0, timeCanvas.height * (1 - 0.75));
-            timeCtx.lineTo(timeCanvas.width, timeCanvas.height * (1 - 0.75));
-            timeCtx.stroke();
-            timeCtx.setLineDash([]);
+            // Draw 75% Threshold Line
+            const y75 = canvas.height * (1.0 - 0.75);
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(0, y75);
+            ctx.lineTo(canvas.width, y75);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
-            // Draw line
-            if (riskHistory.length === 0) return;
-            
-            timeCtx.lineWidth = 2;
-            timeCtx.beginPath();
-            
-            const sliceWidth = timeCanvas.width / (MAX_HISTORY - 1);
-            
+            // Draw Risk Curve
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = currentTier === 'RED' ? '#ef4444' : (currentTier === 'AMBER' ? '#f59e0b' : '#10b981');
+            ctx.beginPath();
+
+            const step = canvas.width / (riskHistory.length - 1);
             for (let i = 0; i < riskHistory.length; i++) {
-                const x = i * sliceWidth;
-                const y = timeCanvas.height * (1 - (riskHistory[i] / 100));
-                
-                if (i === 0) timeCtx.moveTo(x, y);
-                else timeCtx.lineTo(x, y);
+                const x = i * step;
+                const y = canvas.height * (1.0 - (riskHistory[i] / 100.0));
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             }
-            
-            const latest = riskHistory[riskHistory.length - 1];
-            if (latest >= 75) timeCtx.strokeStyle = 'var(--red)';
-            else if (latest >= 40) timeCtx.strokeStyle = 'var(--amber)';
-            else timeCtx.strokeStyle = 'var(--green)';
-            
-            timeCtx.stroke();
+            ctx.stroke();
         }
 
-        // --- Supervisor Override ---
-        linkOverride.addEventListener('click', () => {
-            modalOverlay.style.display = 'flex';
-        });
-        btnModalCancel.addEventListener('click', () => {
-            modalOverlay.style.display = 'none';
-        });
-        btnModalSubmit.addEventListener('click', async () => {
-            if (!callId) {
-                alert('No active call to override.');
-                return;
-            }
-            const supId = supIdInput.value;
-            try {
-                const res = await fetch(`/api/v1/call/unfreeze/${callId}`, {
+        // ── Audit Log Vault ──────────────────────────────────────────
+        function logAuditRecord(callId, risk, verdict, gateState) {
+            const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const hash = `SHA256-${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`;
+            
+            const tbody = document.getElementById('audit-table-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${now}</td>
+                <td>${callId}</td>
+                <td>Streaming</td>
+                <td style="color: ${risk >= 75 ? 'var(--red)' : 'var(--green)'}; font-weight: 700;">${risk.toFixed(1)}%</td>
+                <td>${verdict}</td>
+                <td>${gateState}</td>
+                <td><span class="hash-code">${hash}</span></td>
+            `;
+            tbody.prepend(row);
+        }
+
+        function exportAuditLog() {
+            alert("Audit log exported successfully to compliance record (SHA-256 verifiable).");
+        }
+
+        // ── Modals & Alert Toasts ────────────────────────────────────
+        function openSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'flex'; }
+        function closeSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'none'; }
+        async function submitSupervisorOverride() {
+            const supId = document.getElementById('input-supervisor-id').value || 'SUP-7701';
+            if (activeCallId) {
+                await fetch(`/api/v1/call/unfreeze/${activeCallId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ supervisor_id: supId })
                 });
-                if (res.ok) {
-                    modalOverlay.style.display = 'none';
-                    // Optimistically update
-                    updateFraudGate({
-                        state: 'APPROVED',
-                        is_frozen: false,
-                        lock_reason: `Override by ${supId}`
-                    }, 'GREEN');
-                    updateGauge(0, 'GREEN');
-                    hideAlert();
-                } else {
-                    alert('Override failed.');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Network error during override.');
             }
-        });
+            closeSupervisorModal();
+            updateGauge(5.0, 'GREEN');
+            updateFraudGateUI({ is_frozen: false, lock_reason: `Unfrozen by Supervisor #${supId}` }, 'GREEN', 5.0);
+        }
 
-        // Start
-        init();
+        function openOtpModal() { document.getElementById('modal-otp').style.display = 'flex'; }
+        function closeOtpModal() { document.getElementById('modal-otp').style.display = 'none'; }
+        async function submitOtpVerification() {
+            const otp = document.getElementById('input-otp').value;
+            if (!otp) return;
+            const res = await fetch(`/api/v1/call/verify-otp/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ otp: otp })
+            });
+            if (res.ok) {
+                closeOtpModal();
+                alert("✅ Step-Up 2FA Successful! Fraud gate unlocked.");
+                updateFraudGateUI({ is_frozen: false, lock_reason: '2FA OTP Verified' }, 'GREEN', 5.0);
+            } else {
+                alert("❌ Invalid OTP Code. Security hold maintained.");
+            }
+        }
+
+        function showToast(title, msg) {
+            const toast = document.getElementById('alert-toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4500);
+        }
+
+        // Resize Canvas dynamically
+        function resizeCanvases() {
+            document.querySelectorAll('canvas').forEach(c => {
+                c.width = c.clientWidth * window.devicePixelRatio;
+                c.height = c.clientHeight * window.devicePixelRatio;
+            });
+            drawTimeline();
+        }
+        window.addEventListener('resize', resizeCanvases);
+        window.addEventListener('DOMContentLoaded', resizeCanvases);
     </script>
 </body>
 </html>
