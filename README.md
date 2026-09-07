@@ -168,14 +168,7 @@ python src/pipeline/train.py --epochs 10 --batch_size 24 --lr 0.0001
 | **Buffer Hop Latency** | N/A | **1.0 second rolling** |
 | **Fraud Gate Reaction Time** | N/A | **< 50 ms after threshold breach** |
 
----
 
-## 👥 Contributors (Team Voice Shield - SIH 2026)
-- **Naman** - AI / Deep Learning Core, Model Training & Anti-Spoofing Architecture
-- **Nikunj** - Real-time Streaming Engine, Risk Assessment & Fraud Prevention Backend
-- **Harshit** - Frontend Interface, Platform Dashboard & Telephony UX
-
----
 
 ## 📄 License & Attribution
 - This project is released under the **MIT License**.
