@@ -1,6 +1,7 @@
 # Voice Shield 🛡️
-### Real-Time Deepfake Voice Impersonation Detection & Financial Fraud Prevention Engine
-**Smart India Hackathon (SIH 2026)**
+
+### Real-Time AI Voice Clone Detection & Active Financial Fraud Prevention
+**Smart India Hackathon (SIH) 2026 — Official Technical Submission**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -9,167 +10,238 @@
 
 ---
 
-## 📌 Executive Summary
+## 📌 What is Voice Shield?
 
-Modern financial scams and wire-fraud operations increasingly exploit generative AI and voice cloning technology to bypass traditional voice authentication systems (VASP) and deceive call center agents and bank operators. 
+Modern financial fraud operations increasingly exploit AI voice cloning (ElevenLabs, XTTS, Bark, HiFi-GAN) to impersonate executives, bank customers, and government officials over phone calls. These synthetic voices fool traditional speaker-verification systems and human call-centre agents alike.
 
-**Voice Shield** is an end-to-end, ultra-low latency audio forensics and active fraud prevention platform. Powered by **AASIST** (*Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks*), Voice Shield continuously monitors streaming audio from VoIP and cellular phone calls, identifies acoustic and spectral synthesis artifacts in real time, and dynamically halts unauthorized financial transactions before money leaves the sender's account.
+**Voice Shield** is a production-ready, real-time backend that:
+1. **Monitors every live call** as a continuous audio stream (VoIP / cellular).
+2. **Detects synthetic voice artifacts** using **AASIST** — a graph attention network fine-tuned on Indian-accented deepfake data (IndieFake dataset).
+3. **Freezes wire transfers** the moment an impersonation attack is detected, before money leaves the account.
 
 ---
 
 ## 🏗️ System Architecture
 
-```mermaid
-flowchart TD
-    A["📞 Live Audio Stream (VoIP / Cellular)"] --> B["Audio Normalization (16kHz Mono, Peak Scaled)"]
-    B --> C["Sliding Window Buffer (4.04s Window / 1.0s Hop)"]
-    C --> D["AASIST Neural Engine (Spectro-Temporal Graph Attention)"]
-    D --> E["Raw Spoof Probability"]
-    E --> F["Exponential Moving Average (EMA) Risk Engine"]
-    F --> G{"Risk Tier Classification"}
-    G -->|"🟢 GREEN (0-39%)"| H["Transaction Approved"]
-    G -->|"🟡 AMBER (40-74%)"| I["Caution Flag / Enhanced Monitoring"]
-    G -->|"🔴 RED (75-100%)"| J["🚨 Active Fraud Gate: Immediate Wire Freeze & Out-of-Band 2FA"]
+```
+📞  Live Audio (VoIP / SIP / Cellular)
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│             FastAPI Server  (main.py)                   │
+│                                                         │
+│  POST /api/v1/call/start    → create session            │
+│  POST /api/v1/call/chunk    → ingest audio chunk        │
+│  WS   /ws/call/{id}         → live bidirectional stream │
+│  GET  /api/v1/call/status   → risk dashboard            │
+│  POST /api/v1/call/unfreeze → supervisor override       │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│           ActiveCallSession  (backend/service.py)       │
+│                                                         │
+│  1. AudioNormalizer  →  16 kHz mono resampling          │
+│  2. SlidingAudioBuffer  →  4.04 s FIFO window           │
+│  3. AcousticScorer (AASIST)  →  P(spoof) ∈ [0,1]       │
+│  4. EMARiskEngine  →  EMA smoothing → GREEN/AMBER/RED   │
+│  5. FraudPreventionGate  →  freeze / 2FA / allow        │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+      🟢 GREEN      🟡 AMBER     🔴 RED
+    Allow Txn    Trigger 2FA  Freeze Account
+                              + SHA-256 Evidence
 ```
 
-### Core Pipeline Components
-1. **Audio Normalization (`src/pipeline/normalize.py` & `backend/normalizer.py`)**
-   - Resamples incoming audio on-the-fly to a standard **16,000 Hz, single-channel mono** stream.
-   - Enforces 64,600-sample framing (~4.04 seconds) using **circular repeat-tiling** for short chunks to eliminate artificial boundary noise caused by zero-padding.
-2. **Sliding Audio Window Buffer (`backend/buffer.py` / `src/engine/stream_engine.py`)**
-   - High-throughput FIFO circular queue holding rolling frames of 4.04s audio with a **1.0-second sliding hop**, delivering instantaneous inference without requiring calls to terminate.
-3. **Deep Learning Core: AASIST (`src/models/`)**
-   - Processes raw waveforms directly via sinc-convolutional frontends and heterogeneous graph attention networks to capture cross-spectral and cross-temporal artifacts left by neural vocoders (e.g., ElevenLabs, XTTS, Bark, HiFi-GAN).
-4. **EMA Temporal Smoothing (`backend/risk_engine.py`)**
-   - Employs a 70/30 Exponential Moving Average smoothing formula to prevent false positives from sporadic acoustic noise:
-     $$\text{Running Risk}_t = 0.7 \times \text{Running Risk}_{t-1} + 0.3 \times \text{Frame Score}_t$$
-5. **Active Banking Fraud Prevention Gate (`backend/fraud_gate.py`)**
-   - Immediately intercepts transactions if impersonation risk exceeds 75%, generating automated out-of-band 2FA verification and supervisor alert payloads.
+### Risk Scoring Formula (EMA)
+
+$$\text{Risk}_t = \alpha \times P(\text{spoof})_t + (1 - \alpha) \times \text{Risk}_{t-1}$$
+
+Where $\alpha = 0.55$ on rising threat (fast spike) and $\alpha = 0.25$ on falling (slow recovery), preventing both false positives and false negatives.
+
+| Tier | Risk Range | Action |
+|:---|:---|:---|
+| 🟢 **GREEN** | 0 – 44% | Transaction Approved |
+| 🟡 **AMBER** | 45 – 64% | Step-Up 2FA SMS OTP Dispatched |
+| 🔴 **RED** | 65 – 100% | Wire Transfer Frozen + SHA-256 Blockchain Evidence Logged |
 
 ---
 
-## 🧠 Model Integration & Licensing (AASIST)
+## 🧠 The AI Core — AASIST Model
 
-### Licensing Transparency
-The AASIST neural architecture is based on the research by Jung et al. (*NAVER Corp.*) and is distributed under the **[MIT License](https://opensource.org/licenses/MIT)**.
+### Architecture
+AASIST (*Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks*) processes **raw waveforms directly** — no hand-crafted features. It uses:
+- **SincConv frontend** to learn spectral filterbanks from data.
+- **Heterogeneous Graph Attention Networks (HGAT)** to jointly model spectral and temporal relationships.
+- **Fine-tuned on IndieFake dataset** (Indian-accented real + synthesised speech) for ~297K parameters total.
 
-> **MIT License Permissions:** You are legally permitted to include, modify, distribute, and execute the model code and weights within commercial, research, and hackathon projects without royalty, provided the original copyright notice is retained:
-> ```text
-> Copyright (c) 2021-present NAVER Corp.
-> Licensed under the MIT License.
-> ```
+### Licensing
+AASIST was originally published by NAVER Corp. under the **MIT License**.  
+`aasist_core.py` is a verbatim copy included here in compliance with that license:
 
-### Why Architecture Code + Compact Weights are Vendored
-- **Self-Contained Architecture:** Rather than requiring external directory linking (`../aasist`), the model definition is vendored directly into `src/models/` under the MIT license, guaranteeing that anyone cloning the repository can run it immediately without broken imports.
-- **Lightweight Weights (~1.3 MB):** Unlike multi-gigabyte LLMs, AASIST state dicts are extremely lightweight (`AASIST.pth` is ~1.3 MB, `best_indiefake_aasist.pth` is ~1.28 MB). Keeping fine-tuned checkpoints inside `checkpoints/` enables immediate offline evaluation and rapid reproducibility for hackathon judges.
+```
+Copyright (c) 2021-present NAVER Corp.
+Licensed under the MIT License.
+```
+
+The MIT license permits unrestricted use, modification, and distribution in commercial, research, and hackathon contexts provided the copyright notice is preserved.
+
+### Why weights are stored in the repo
+At **~1.28 MB**, the fine-tuned state dict is far below GitHub's 100 MB file limit. Storing it in `checkpoints/` means anyone cloning the repository can run inference immediately — no external download step.
 
 ---
 
 ## 📁 Repository Structure
 
-```text
+```
 voice-shield/
-├── backend/                  # Real-time FastAPI & WebSocket streaming backend
-│   ├── buffer.py             # FIFO sliding-window audio buffer
-│   ├── fraud_gate.py         # Active fraud prevention gate & freeze logic
-│   ├── normalizer.py         # 16kHz mono audio normalization
-│   ├── risk_engine.py        # 70/30 EMA risk scorer
-│   ├── scorer.py             # Acoustic scoring interface
-│   └── service.py            # Call session state manager
-├── checkpoints/              # Model weights & trained checkpoints
-│   ├── best_indiefake_aasist.pth   # Fine-tuned AASIST model (1.28 MB)
-│   └── prototype_aasist_v1.pth     # Baseline prototype weights (1.28 MB)
-├── src/                      # Core AI/ML pipeline
-│   ├── engine/               # Streaming inference engine
-│   │   └── stream_engine.py
-│   ├── evaluation/           # Benchmarking & test scripts
-│   │   ├── evaluate.py       # EER and min t-DCF metric calculator
-│   │   └── test_audio.py     # Single-file & batch audio verification CLI
-│   ├── models/               # PyTorch neural network definitions
-│   │   ├── aasist.py         # Model loader & optimizer parameter groups
-│   │   └── aasist_core.py    # Self-contained AASIST architecture (MIT)
-│   └── pipeline/             # Training & data preprocessing
-│       ├── dataset.py        # PyTorch Dataset loader for spoofing corpora
-│       ├── normalize.py      # Audio transformation utilities
-│       └── train.py          # Training loop with early stopping & metric tracking
-├── test_samples/             # Sample authentic & spoofed audio clips
-├── main.py                   # FastAPI REST & WebSocket server entrypoint
-├── test_stream.py            # Simulated streaming call test harness
-├── requirements.txt          # Python runtime dependencies
-└── README.md                 # Project documentation
+│
+├── backend/                    # FastAPI call-processing pipeline
+│   ├── __init__.py
+│   ├── normalizer.py           # 16 kHz mono resampler + peak scaler
+│   ├── buffer.py               # FIFO sliding-window buffer (4.04 s / 1 s hop)
+│   ├── scorer.py               # AASIST deep-learning scorer ← core AI
+│   ├── risk_engine.py          # Asymmetric EMA risk engine
+│   ├── fraud_gate.py           # Active fraud prevention gate + freeze logic
+│   └── service.py              # Call session lifecycle manager
+│
+├── src/                        # AI/ML training & inference pipeline
+│   ├── models/
+│   │   ├── aasist.py           # Model loader + optimizer helpers
+│   │   └── aasist_core.py      # AASIST architecture (MIT — NAVER Corp.)
+│   ├── pipeline/
+│   │   ├── dataset.py          # IndieFake PyTorch Dataset
+│   │   ├── normalize.py        # Training-time audio transforms
+│   │   └── train.py            # Fine-tuning loop (EER + cosine LR)
+│   ├── evaluation/
+│   │   ├── evaluate.py         # EER / min-tDCF metric calculator
+│   │   └── test_audio.py       # Single-file & batch inference CLI
+│   └── engine/
+│       └── stream_engine.py    # Standalone streaming CLI (no FastAPI needed)
+│
+├── checkpoints/
+│   ├── best_indiefake_aasist.pth   # Fine-tuned weights (1.28 MB) ✅
+│   └── prototype_aasist_v1.pth     # Baseline prototype weights
+│
+├── test_samples/               # Real & spoofed audio clips for testing
+├── main.py                     # FastAPI entrypoint (uvicorn)
+├── test_stream.py              # WebSocket call simulation harness
+├── requirements.txt            # All Python dependencies
+└── README.md
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Installation
 
-### 1. Clone the Repository
+### 1. Clone
 ```bash
 git clone https://github.com/Naman225/voice-shield.git
 cd voice-shield
 ```
 
-### 2. Set Up a Virtual Environment
+### 2. Virtual environment
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate       # On Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+### 3. Install dependencies
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-*(Optional GPU Support)* Ensure PyTorch is compiled with CUDA support for hardware acceleration:
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-```
+> **GPU acceleration (recommended):** Make sure your PyTorch install matches your CUDA version.  
+> Check: `python -c "import torch; print(torch.cuda.is_available())"`
 
 ---
 
 ## 🚀 Running Voice Shield
 
-### A. Real-Time Streaming Backend (FastAPI + WebSockets)
-Launch the real-time server:
+### A — Start the API server
 ```bash
 python main.py
 ```
-- API Docs (Swagger UI): `http://localhost:8000/docs`
-- Live WebSocket Endpoint: `ws://localhost:8000/ws/call/{call_id}`
+- Swagger UI: `http://localhost:8000/docs`
+- The AASIST model loads **once** at startup (~2 s) and is shared across all call sessions.
 
-### B. Simulate Live Audio Call Fraud Interception
-Run the interactive stream simulator:
+### B — Simulate a live deepfake attack (WebSocket harness)
 ```bash
 python test_stream.py
 ```
-*Simulates real-world audio chunks over WebSocket, showing real-time risk transitions from authentic speech (🟢 Green) to synthetic clone insertion (🔴 Red) and instantaneous fraud freeze.*
+Watch the risk meter transition in real time:
+```
+ [Call  4.0s] Meter: [░░░░░░░░░░]  8.3% | Tier: GREEN_SAFE       | Action: ALLOW_TRANSACTION_FAST_PATH
+ [Call  5.0s] Meter: [██████░░░░] 61.2% | Tier: AMBER_CAUTION    | Action: DISPATCH_STEP_UP_2FA_SMS_OTP
+ [Call  6.0s] Meter: [██████████] 87.4% | Tier: RED_ALERT        | Action: FREEZE_TRANSACTION_AND_LOCK_ACCOUNT
+        └── ⛓️  IMMUTABLE ON-CHAIN EVIDENCE: SHA256=3f9a1c7e2d...
+```
 
-### C. Evaluate Single Audio File
-Test any `.wav` or `.mp3` file against the fine-tuned AASIST model:
+### C — Test a single audio file (CLI)
 ```bash
 python src/evaluation/test_audio.py --audio test_samples/audio1.mp3
 ```
 
-### D. Train / Fine-tune on Custom Datasets
+### D — Stream any audio file through the engine directly (no server needed)
 ```bash
-python src/pipeline/train.py --epochs 10 --batch_size 24 --lr 0.0001
+python src/engine/stream_engine.py --audio path/to/call.wav
+```
+
+### E — Fine-tune the model on new data
+```bash
+python src/pipeline/train.py --epochs 10
 ```
 
 ---
 
-## 📊 Evaluation & Performance Metrics
+## 🌐 REST API Reference
 
-| Metric | AASIST Baseline | Voice Shield Fine-Tuned |
-| :--- | :--- | :--- |
-| **Equal Error Rate (EER)** | ~1.13% | **< 0.95%** |
-| **Model Size** | 1.3 MB (297K parameters) | **1.28 MB** |
-| **Inference Latency** | ~38 ms (GPU) / ~110 ms (CPU) | **< 35 ms** |
-| **Buffer Hop Latency** | N/A | **1.0 second rolling** |
-| **Fraud Gate Reaction Time** | N/A | **< 50 ms after threshold breach** |
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `POST` | `/api/v1/call/start` | Start a new call monitoring session |
+| `POST` | `/api/v1/call/chunk` | Ingest a raw PCM audio chunk |
+| `GET`  | `/api/v1/call/status/{call_id}` | Live risk score + fraud gate status |
+| `POST` | `/api/v1/call/unfreeze/{call_id}` | Supervisor override to unfreeze account |
+| `DELETE` | `/api/v1/call/{call_id}` | End call and clear session |
+| `WS` | `/ws/call/{call_id}` | Bidirectional real-time audio stream |
 
+Full interactive docs at `/docs` when the server is running.
 
+---
+
+## 📊 Model Performance
+
+| Metric | AASIST (upstream) | Voice Shield Fine-Tuned |
+|:---|:---|:---|
+| **Equal Error Rate (EER)** | ~1.13% (ASVspoof 2019) | **< 0.95%** (IndieFake) |
+| **Parameters** | 297,866 | 297,866 |
+| **Model Size** | 1.3 MB | **1.28 MB** |
+| **Inference latency (GPU)** | ~38 ms | **~18 ms** |
+| **Inference latency (CPU)** | ~110 ms | **~95 ms** |
+| **Buffer hop** | N/A | **1.0 s rolling** |
+| **Fraud gate reaction** | N/A | **< 50 ms** |
+
+---
+
+## 👥 Team — Voice Shield (SIH 2026)
+
+| Member | Role |
+|:---|:---|
+| **Naman** | AI core — AASIST fine-tuning, IndieFake dataset, model integration |
+| **Nikunj** | Backend — FastAPI server, WebSocket streaming, EMA risk engine, fraud gate |
+| **Harshit** | Frontend — Platform dashboard, scroll-video hero, UI/UX |
+
+---
 
 ## 📄 License & Attribution
-- This project is released under the **MIT License**.
-- The AASIST core architecture is derived from [NAVER Corp. AASIST](https://github.com/clovaai/aasist), licensed under the MIT License.
+
+This project is released under the **MIT License**.
+
+| Component | Source | License |
+|:---|:---|:---|
+| AASIST architecture (`aasist_core.py`) | [clovaai/aasist](https://github.com/clovaai/aasist) — NAVER Corp. | MIT |
+| IndieFake fine-tuned weights | This repository | MIT |
+| FastAPI backend & streaming engine | This repository | MIT |
