@@ -200,7 +200,7 @@
         /* ── Grid Dashboard Layout ─────────────────────────────────── */
         .grid-dashboard {
             display: grid;
-            grid-template-columns: 290px 1fr 370px;
+            grid-template-columns: 290px 1fr 390px;
             gap: 1.5rem;
             align-items: start;
         }
@@ -462,15 +462,15 @@
         /* Chips for Quick Voice Simulation fallback */
         .chips-container { margin-top: 0.75rem; }
         .chips-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
-        .chips-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+        .chips-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
 
         .chip-btn {
             background: var(--bg-elevated);
             border: 1px solid var(--border-subtle);
             color: var(--text-secondary);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            padding: 4px 10px;
+            padding: 3px 9px;
             border-radius: 999px;
             cursor: pointer;
             transition: all 0.15s ease;
@@ -536,12 +536,18 @@
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.82);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal {
@@ -551,7 +557,7 @@
             padding: 1.75rem;
             width: 90%;
             max-width: 440px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
         }
 
         .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
@@ -657,7 +663,7 @@
             <div class="brand-icon">🛡️</div>
             <div class="brand-titles">
                 <h1>VOICE SHIELD <span class="brand-badge">Enterprise v2.0</span></h1>
-                <div class="brand-sub">Hands-Free Conversational Voice Banking with Real-Time Deepfake Interception</div>
+                <div class="brand-sub">Conversational Voice Banking with Real-Time Deepfake Interception</div>
             </div>
         </div>
 
@@ -704,20 +710,29 @@
                         <div class="meta-item">
                             <div class="meta-label">Calling Account Profile</div>
                             <select id="select-caller" class="select-input" onchange="onCallerProfileChanged()">
-                                <option value="ACC-550189|+91 98765 43210 (CEO Executive Line)">CEO Line (+91 98765 43210) [ACC-550189]</option>
-                                <option value="ACC-9948201|+91 98111 22334 (Treasury Desk)">Treasury Line (+91 98111 22334) [ACC-9948201]</option>
-                                <option value="ACC-550189|+1 800 555 0199 (Suspicious VoIP)">Suspicious VoIP Gateway [ACC-550189]</option>
+                                <option value="+91 98765 43210|ACC-550189">CEO Line (+91 98765 43210)</option>
+                                <option value="+91 98111 22334|ACC-9948201">Treasury Line (+91 98111 22334)</option>
+                                <option value="+91 98222 33445|ACC-4410293">Retail Customer (+91 98222 33445)</option>
+                                <option value="+1 800 555 0199|ACC-VOIP-771">Suspicious VoIP Gateway</option>
                             </select>
                         </div>
 
+                        <!-- Phone Number (Syncs Account ID Automatically) -->
                         <div class="meta-item">
-                            <div class="meta-label">Target Account ID</div>
+                            <div class="meta-label">Caller Phone Number (Live Sync)</div>
+                            <input type="text" id="input-caller-line" class="select-input" value="+91 98765 43210" oninput="syncPhoneToAccount()">
+                        </div>
+
+                        <!-- Target Account ID (Auto-updated on phone change) -->
+                        <div class="meta-item">
+                            <div class="meta-label">Linked Bank Account ID</div>
                             <input type="text" id="input-account-num" class="select-input" value="ACC-550189">
                         </div>
 
+                        <!-- Configurable Transfer Amount -->
                         <div class="meta-item">
-                            <div class="meta-label">Caller Phone Line</div>
-                            <input type="text" id="input-caller-line" class="select-input" value="+91 98765 43210 (CEO Executive Line)">
+                            <div class="meta-label">Wire Transfer Amount (₹)</div>
+                            <input type="number" id="input-transfer-amount" class="select-input" value="50000" step="5000">
                         </div>
 
                         <div class="meta-item">
@@ -755,7 +770,7 @@
                     <div class="canvas-block">
                         <div class="canvas-label">
                             <span>Live Audio Waveform</span>
-                            <span>16,000 Hz Mono</span>
+                            <span id="disp-echo-status" style="color: var(--cyan);">Acoustic Echo Guard Active</span>
                         </div>
                         <canvas id="canvas-oscilloscope"></canvas>
                     </div>
@@ -784,19 +799,20 @@
                         </div>
                     </div>
 
-                    <!-- Live Speech Recognition Transcript -->
+                    <!-- Live Speech Recognition Transcript (Echo Protected) -->
                     <div class="heard-box">
                         <span class="heard-label">🎤 Heard:</span>
                         <span id="live-heard-text" class="heard-text">Listening for speech...</span>
                     </div>
 
-                    <!-- Quick Voice Simulation Chips (Fallback for noisy rooms) -->
+                    <!-- Quick Voice Simulation Chips -->
                     <div class="chips-container">
                         <span class="chips-label">Quick Voice Simulation:</span>
                         <div class="chips-row">
                             <button class="chip-btn" onclick="simulateVoiceInput('yes')">🗣️ "Yes, confirm"</button>
                             <button class="chip-btn" onclick="simulateVoiceInput('check account balance')">🗣️ "Check Balance"</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('authorize wire transfer of 25 lakhs')">🗣️ "Transfer ₹25L"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 50000')">🗣️ "Transfer ₹50K"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 25 lakh')">🗣️ "Transfer ₹25L"</button>
                             <button class="chip-btn" onclick="simulateVoiceInput('Max')">🗣️ "Max"</button>
                         </div>
                     </div>
@@ -897,7 +913,7 @@
                         </thead>
                         <tbody id="audit-table-body">
                             <tr>
-                                <td>2026-09-07 21:15:04</td>
+                                <td>2026-09-08 06:40:12</td>
                                 <td>CALL-LIVE-BASE</td>
                                 <td>ACC-550189</td>
                                 <td style="color: var(--green); font-weight: 700;">3.8%</td>
@@ -912,6 +928,50 @@
         </div>
 
     </main>
+
+    <!-- ── POPUP 1: OTP Dispatched Step-Up Modal (AMBER Flow) ─────── -->
+    <div id="modal-otp-sent" class="modal-overlay">
+        <div class="modal" style="border-color: var(--amber); box-shadow: 0 0 40px var(--amber-glow);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📲</div>
+            <div class="modal-title" style="color: var(--amber);">STEP-UP 2FA: OTP DISPATCHED</div>
+            <div class="modal-body">
+                A high-security 6-digit One-Time Password has been dispatched to your registered phone number:
+                <div style="color: var(--text-primary); font-weight: 700; margin-top: 4px;" id="otp-mobile-disp">+91 98765 43210</div>
+            </div>
+
+            <!-- Simulated SMS Gateway Received Box -->
+            <div style="background: rgba(245, 158, 11, 0.12); border: 1px dashed var(--amber); padding: 0.85rem; border-radius: var(--radius-sm); text-align: center; margin-bottom: 1.25rem;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">SMS Gateway Received (Demo OTP):</div>
+                <div id="otp-code-disp" style="font-size: 2rem; font-family: var(--font-mono); font-weight: 800; color: var(--amber); letter-spacing: 5px; margin-top: 2px;">847291</div>
+            </div>
+
+            <input type="text" id="input-verify-otp" class="modal-input" placeholder="Enter 6-digit OTP code" value="847291">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeOtpSentModal()">Cancel</button>
+                <button class="btn-primary" style="background: var(--amber); color: black;" onclick="submitVerifyOtpModal()">Verify OTP & Authorize</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── POPUP 2: Critical Account Frozen Modal (RED Flow) ──────── -->
+    <div id="modal-account-frozen" class="modal-overlay">
+        <div class="modal" style="border-color: var(--red); box-shadow: 0 0 50px var(--red-glow);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🚨</div>
+            <div class="modal-title" style="color: var(--red);">FRAUD GATE ACTIVATED: ACCOUNT FROZEN</div>
+            <div class="modal-body" style="line-height: 1.6;">
+                <strong>CRITICAL SECURITY BREACH PREVENTED:</strong><br>
+                An AI voice cloning impersonation attack was intercepted in real-time.<br><br>
+                • <strong>Target Account:</strong> <span id="frozen-account-disp" style="font-family: var(--font-mono); font-weight:700;">ACC-550189</span><br>
+                • <strong>Impersonation Risk:</strong> <span id="frozen-risk-disp" style="color: var(--red); font-weight: 800;">82.4%</span><br>
+                • <strong>Status:</strong> Active telephone call terminated & all bank transactions locked.<br>
+                • <strong>Evidence Hash:</strong> <span id="frozen-hash-disp" class="hash-code">SHA256-4a8dde81c989a...</span>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeFrozenModal()">Dismiss</button>
+                <button class="btn-primary" style="background: var(--cyan); color: black;" onclick="closeFrozenModal(); openSupervisorModal();">Supervisor Unfreeze</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ── Supervisor Override Modal ───────────────────────────────── -->
     <div id="modal-supervisor" class="modal-overlay">
@@ -940,6 +1000,9 @@
         let callStartTime = 0;
         let timerInterval = null;
 
+        // Acoustic Echo Guard (Prevents AI voice from looping back into mic & triggering false RED)
+        let isBotSpeaking = false;
+
         const SAMPLES_PER_CHUNK = 8000; // 500ms at 16kHz
         let pcmBuffer = [];
         let riskHistory = new Array(60).fill(5.0);
@@ -951,17 +1014,66 @@
         // Stages: IDLE -> AWAIT_CONFIRM -> AWAIT_INTENT -> AWAIT_SECURITY_Q -> COMPLETED / TERMINATED
         let dialogueStage = "IDLE";
         let pendingAction = null; // "BALANCE" or "TRANSFER"
-        let activeSecurityQuestion = "What is your first pet's name?";
+        let pendingTransferAmount = 50000;
 
-        // ── Speech Synthesis Voice Prompts ────────────────────────────
-        function speakBot(text) {
+        // Phone-to-Account Registry Map
+        const PHONE_ACCOUNT_MAP = {
+            "+91 98765 43210": "ACC-550189",
+            "+91 98111 22334": "ACC-9948201",
+            "+91 98222 33445": "ACC-4410293",
+            "+1 800 555 0199": "ACC-VOIP-771"
+        };
+
+        // ── Phone Number & Account Synchronization ───────────────────
+        function onCallerProfileChanged() {
+            const val = document.getElementById('select-caller').value;
+            const parts = val.split('|');
+            document.getElementById('input-caller-line').value = parts[0];
+            document.getElementById('input-account-num').value = parts[1];
+        }
+
+        function syncPhoneToAccount() {
+            const phone = document.getElementById('input-caller-line').value.trim();
+            if (PHONE_ACCOUNT_MAP[phone]) {
+                document.getElementById('input-account-num').value = PHONE_ACCOUNT_MAP[phone];
+                return;
+            }
+            // Auto-generate account number from phone digits if custom
+            const digits = phone.replace(/\D/g, '');
+            const suffix = digits.slice(-6) || '884920';
+            document.getElementById('input-account-num').value = `ACC-${suffix}`;
+        }
+
+        // ── Speech Synthesis with Acoustic Echo Guard ────────────────
+        function speakBot(text, onComplete) {
             appendDialogue("bot", text);
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
+                isBotSpeaking = true;
+                document.getElementById('live-heard-text').innerText = "🤖 Bot speaking... (Mic paused to prevent echo)";
+
                 const utter = new SpeechSynthesisUtterance(text);
                 utter.rate = 1.0;
                 utter.pitch = 1.0;
+
+                utter.onend = () => {
+                    // 350ms cooldown to ensure speaker sound wave clears room
+                    setTimeout(() => {
+                        isBotSpeaking = false;
+                        document.getElementById('live-heard-text').innerText = "🎤 Your turn to speak! (Listening...)";
+                        if (onComplete) onComplete();
+                    }, 350);
+                };
+
+                utter.onerror = () => {
+                    isBotSpeaking = false;
+                    document.getElementById('live-heard-text').innerText = "🎤 Your turn to speak! (Listening...)";
+                    if (onComplete) onComplete();
+                };
+
                 window.speechSynthesis.speak(utter);
+            } else {
+                if (onComplete) onComplete();
             }
         }
 
@@ -972,14 +1084,6 @@
             bubble.innerHTML = `${sender === 'bot' ? '🤖 ' : '👤 '}${text}`;
             container.appendChild(bubble);
             container.scrollTop = container.scrollHeight;
-        }
-
-        // ── Caller Profile Selector ──────────────────────────────────
-        function onCallerProfileChanged() {
-            const val = document.getElementById('select-caller').value;
-            const parts = val.split('|');
-            document.getElementById('input-account-num').value = parts[0];
-            document.getElementById('input-caller-line').value = parts[1];
         }
 
         // ── Tab Switching ────────────────────────────────────────────
@@ -1001,10 +1105,9 @@
 
         async function startLiveStream() {
             const accNum = document.getElementById('input-account-num').value.trim() || 'ACC-550189';
-            const callerLine = document.getElementById('input-caller-line').value.trim();
+            const callerPhone = document.getElementById('input-caller-line').value.trim();
 
             try {
-                // 1. Microphone capture for AASIST WebSocket streaming
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
                 const source = audioCtx.createMediaStreamSource(micStream);
@@ -1013,7 +1116,7 @@
                 document.getElementById('disp-call-id').innerText = activeCallId;
 
                 const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${wsProto}//${window.location.host}/ws/call/${activeCallId}?account=${encodeURIComponent(accNum)}&caller_id=${encodeURIComponent(callerLine)}`;
+                const wsUrl = `${wsProto}//${window.location.host}/ws/call/${activeCallId}?account=${encodeURIComponent(accNum)}&caller_id=${encodeURIComponent(callerPhone)}`;
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
@@ -1027,9 +1130,9 @@
                     document.getElementById('mic-text').innerText = 'End Live Call';
                     document.getElementById('ivr-status-pill').innerText = 'In Call';
 
-                    // Start Conversational IVR Dialogue Flow
+                    // Welcome speech verification
                     dialogueStage = "AWAIT_CONFIRM";
-                    speakBot(`Welcome to Secure Banking. I see you are calling from ${callerLine.split('(')[0]}, linked to account ${accNum}. Please say 'Yes' to confirm.`);
+                    speakBot(`Welcome to Secure Banking. I see you are calling from ${callerPhone}, linked to account ${accNum}. Please say 'Yes' to confirm.`);
                 };
 
                 ws.onmessage = (event) => {
@@ -1043,6 +1146,13 @@
                 scriptNode = audioCtx.createScriptProcessor(4096, 1, 1);
                 scriptNode.onaudioprocess = (e) => {
                     if (!isStreaming || ws.readyState !== WebSocket.OPEN) return;
+                    
+                    // ── ECHO GUARD: DO NOT STREAM MIC SAMPLES WHILE BOT IS SPEAKING! ──
+                    if (isBotSpeaking) {
+                        pcmBuffer = [];
+                        return;
+                    }
+
                     const channelData = e.inputBuffer.getChannelData(0);
                     for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
@@ -1052,7 +1162,7 @@
                             samples: chunk,
                             sample_rate: 16000,
                             account_number: accNum,
-                            caller_id: callerLine
+                            caller_id: callerPhone
                         }));
                         drawOscilloscope(chunk);
                     }
@@ -1061,7 +1171,6 @@
                 source.connect(scriptNode);
                 scriptNode.connect(audioCtx.destination);
 
-                // 2. Initialize Speech Recognition for Hands-Free Voice Commands
                 initSpeechRecognition();
 
             } catch (err) {
@@ -1078,6 +1187,7 @@
                 speechRec.lang = 'en-IN';
 
                 speechRec.onresult = (e) => {
+                    if (isBotSpeaking) return; // Do not transcribe bot's own voice
                     let interim = '';
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
                         if (e.results[i].isFinal) {
@@ -1099,6 +1209,7 @@
 
         function stopLiveStream(reason) {
             isStreaming = false;
+            isBotSpeaking = false;
             dialogueStage = "IDLE";
             if (timerInterval) clearInterval(timerInterval);
             if (scriptNode) scriptNode.disconnect();
@@ -1133,42 +1244,64 @@
             handleVoiceInput(text);
         }
 
+        // Helper to extract amounts from natural speech
+        function extractAmountFromSpeech(rawText) {
+            const text = rawText.toLowerCase();
+            const lakhMatch = text.match(/(\d+(\.\d+)?)\s*(lakh|lac|lakhs|lacs)/);
+            if (lakhMatch) return parseFloat(lakhMatch[1]) * 100000;
+
+            const croreMatch = text.match(/(\d+(\.\d+)?)\s*(crore|crores)/);
+            if (croreMatch) return parseFloat(croreMatch[1]) * 10000000;
+
+            const kMatch = text.match(/(\d+(\.\d+)?)\s*(thousand|k)/);
+            if (kMatch) return parseFloat(kMatch[1]) * 1000;
+
+            const plainMatch = text.replace(/,/g, '').match(/\b\d{3,9}\b/);
+            if (plainMatch) return parseFloat(plainMatch[0]);
+
+            const inputVal = parseFloat(document.getElementById('input-transfer-amount').value);
+            return isNaN(inputVal) ? 50000 : inputVal;
+        }
+
         async function handleVoiceInput(rawText) {
             const text = rawText.toLowerCase().trim();
             appendDialogue("user", rawText);
             const accNum = document.getElementById('input-account-num').value.trim();
 
-            // Stage 1: Awaiting Account Confirmation ("Yes")
+            // Stage 1: Confirm Account
             if (dialogueStage === "AWAIT_CONFIRM") {
                 if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right')) {
                     dialogueStage = "AWAIT_INTENT";
-                    speakBot("Account verified. How can I help you? You can say 'Check account balance' or 'Authorize wire transfer'.");
+                    speakBot("Account verified. How can I help you? You can say 'Check account balance' or 'Transfer money'.");
                 } else {
-                    speakBot("Please say 'Yes' to confirm this is your account, or choose another profile.");
+                    speakBot("Please say 'Yes' to confirm this is your account, or choose another phone number.");
                 }
                 return;
             }
 
-            // Stage 2: Intent Selection (Balance vs Transfer)
+            // Stage 2: Intent Detection
             if (dialogueStage === "AWAIT_INTENT") {
-                if (text.includes('balance') || text.includes('money') || text.includes('details') || text.includes('account')) {
+                if (text.includes('balance') || text.includes('money') || text.includes('details') || text.includes('statement')) {
                     executeVoiceBalanceInquiry(accNum);
-                } else if (text.includes('transfer') || text.includes('send') || text.includes('lakh') || text.includes('wire')) {
-                    executeVoiceWireTransfer(accNum);
+                } else if (text.includes('transfer') || text.includes('send') || text.includes('wire') || text.includes('pay')) {
+                    const amount = extractAmountFromSpeech(rawText);
+                    document.getElementById('input-transfer-amount').value = amount;
+                    pendingTransferAmount = amount;
+                    executeVoiceWireTransfer(accNum, amount);
                 } else {
                     speakBot("I can help you check your account balance or process a wire transfer. Which one would you like?");
                 }
                 return;
             }
 
-            // Stage 3: Awaiting Security Question Answer (AMBER Challenge)
+            // Stage 3: Awaiting Security Question Answer
             if (dialogueStage === "AWAIT_SECURITY_Q") {
                 await verifySecurityAnswerByVoice(text, accNum);
                 return;
             }
         }
 
-        // ── Voice Action: Check Balance ──────────────────────────────
+        // ── Voice Action: Balance Inquiry ────────────────────────────
         async function executeVoiceBalanceInquiry(accNum) {
             const res = await fetch('/api/v1/call/inquiry', {
                 method: 'POST',
@@ -1178,63 +1311,62 @@
             const data = await res.json();
 
             if (res.status === 200) {
-                // GREEN - Authorized
-                speakBot(`Your current available balance in account ${accNum} is twelve lakh forty thousand five hundred rupees. Voice integrity verified.`);
+                speakBot(`Your current available balance in account ${accNum} is twelve lakh forty thousand five hundred rupees.`);
                 showResultCard("ℹ️ Account Balance Verified", `
                     <strong>Account:</strong> ${data.account_number}<br>
                     <strong>Owner:</strong> ${data.owner}<br>
                     <strong>Available Balance:</strong> <span style="color: var(--green); font-weight:700;">${data.balance}</span><br>
-                    <strong>Voice Integrity:</strong> ${data.voice_integrity}
+                    <strong>Voice Status:</strong> ${data.voice_integrity}
                 `);
             } else if (res.status === 202) {
-                // AMBER - Challenge
                 pendingAction = "BALANCE";
                 dialogueStage = "AWAIT_SECURITY_Q";
-                speakBot(`Caution: Voice anomaly detected. Before I reveal your balance, please answer your security check: What is your first pet's name?`);
+                speakBot(`Caution: Voice anomaly detected. Before I reveal your balance, please answer your security question: What is your first pet's name?`);
             } else {
-                // RED - Cut
+                openFrozenModal(accNum, "85.0%", "SHA256-4a8dde81c989a17");
                 speakBot(data.voice_prompt || "Unauthorized access detected. Call terminated.");
                 stopLiveStream("AUTOCUT_RED");
             }
         }
 
         // ── Voice Action: Wire Transfer ──────────────────────────────
-        async function executeVoiceWireTransfer(accNum) {
+        async function executeVoiceWireTransfer(accNum, amount) {
             const res = await fetch('/api/v1/bank/transfer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     call_id: activeCallId,
                     account_number: accNum,
-                    amount: 2500000.0,
+                    amount: amount,
                     beneficiary: 'ABC Corp Ltd'
                 })
             });
             const data = await res.json();
 
             if (res.status === 200) {
-                // GREEN - Authorized
-                speakBot(`Processing wire transfer of twenty-five lakh rupees to ABC Corp Ltd. Authorized successfully. Receipt TXN 9941.`);
+                speakBot(`Processing wire transfer of ₹${amount.toLocaleString('en-IN')} to ABC Corp Ltd. Authorized successfully.`);
                 showResultCard("💸 Wire Transfer Authorized", `
                     <strong>Status:</strong> <span style="color: var(--green);">TRANSFER_SUCCESSFUL</span><br>
                     <strong>Receipt ID:</strong> ${data.receipt_id}<br>
-                    <strong>Amount:</strong> ₹ 25,00,000.00<br>
+                    <strong>Amount Transferred:</strong> ₹ ${amount.toLocaleString('en-IN')}<br>
                     <strong>Beneficiary:</strong> ${data.beneficiary}<br>
-                    <strong>Voice Score:</strong> ${data.voice_integrity_score}
+                    <strong>Voice Integrity:</strong> ${data.voice_integrity_score}
                 `);
             } else if (res.status === 202) {
-                // AMBER - Challenge
                 pendingAction = "TRANSFER";
                 dialogueStage = "AWAIT_SECURITY_Q";
-                speakBot(`Caution: Voice anomaly detected. Before authorizing the wire transfer, please answer: What is your first pet's name?`);
+                // Trigger OTP Sent Popup
+                const demoOtp = data.demo_otp || "847291";
+                openOtpSentModal(demoOtp);
+                speakBot(`Caution: Elevated voice variance detected. A 6-digit OTP has been sent to your phone. Or answer: What is your first pet's name?`);
             } else {
-                // RED - Cut
+                openFrozenModal(accNum, data.detail?.risk_score || "82.4%", data.detail?.evidence_hash || "SHA256-4a8dde81c989a");
                 speakBot("Unauthorized access detected: AI voice clone identified. Wire transfer blocked. Terminating call immediately.");
                 stopLiveStream("AUTOCUT_RED");
             }
         }
 
-        // ── Verify Security Question via Voice ───────────────────────
+        // ── Security Verification via Voice ──────────────────────────
         async function verifySecurityAnswerByVoice(spokenAnswer, accNum) {
             const res = await fetch(`/api/v1/call/verify-question/${activeCallId}`, {
                 method: 'POST',
@@ -1245,15 +1377,16 @@
 
             if (res.status === 200) {
                 dialogueStage = "AWAIT_INTENT";
+                closeOtpSentModal();
                 speakBot("Identity verified successfully. Proceeding with your request.");
                 updateGauge(5.0, 'GREEN');
                 updateFraudGateUI({ is_frozen: false, lock_reason: 'Security Check Passed' }, 'GREEN', 5.0);
 
-                // Execute the pending action
                 if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
-                else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum);
+                else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
                 pendingAction = null;
             } else {
+                openFrozenModal(accNum, "92.0%", "SHA256-4a8dde81c989a");
                 speakBot("Security verification failed. Unauthorized access detected. Terminating call immediately.");
                 stopLiveStream("AUTOCUT_RED");
             }
@@ -1266,7 +1399,7 @@
             card.style.display = 'block';
         }
 
-        // ── Real-Time Acoustic Forensics Telemetry Update ────────────
+        // ── Telemetry Updates & Real-Time Fraud Popups ───────────────
         function handleTelemetryUpdate(data) {
             latestRisk = data.running_risk_pct || 5.0;
             currentTier = data.risk_tier || "GREEN";
@@ -1278,8 +1411,9 @@
             if (riskHistory.length > 60) riskHistory.shift();
             drawTimeline();
 
-            // 1. Instant Auto-Hangup on RED
+            // 1. Critical RED -> Pop up Account Freeze Modal
             if (data.call_action === "CUT_CALL" || currentTier === "RED") {
+                openFrozenModal(data.account_number, `${latestRisk.toFixed(1)}%`, `SHA256-${Math.random().toString(36).substring(2, 12)}`);
                 speakBot(data.voice_prompt || "Unauthorized access detected. Call terminated.");
                 updateFraudGateUI(gate, "RED", latestRisk);
                 stopLiveStream("AUTOCUT_RED");
@@ -1287,11 +1421,12 @@
                 return;
             }
 
-            // 2. AMBER Caution Challenge
+            // 2. AMBER Caution -> Trigger Challenge
             if (data.call_action === "CHALLENGE_AUTHENTICATION" || currentTier === "AMBER") {
                 if (dialogueStage !== "AWAIT_SECURITY_Q") {
                     dialogueStage = "AWAIT_SECURITY_Q";
-                    speakBot("Caution: Elevated voice anomaly detected. Please say your security check: What is your first pet's name?");
+                    openOtpSentModal("847291");
+                    speakBot("Caution: Elevated voice anomaly detected. Please verify your identity with your OTP or security question.");
                 }
                 updateFraudGateUI(gate, "AMBER", latestRisk);
                 return;
@@ -1352,7 +1487,7 @@
                 banner.style.background = 'var(--amber-glow)';
                 stateText.innerHTML = '<span>⚠️</span> CAUTION: CHALLENGE REQUIRED';
                 stateText.style.color = 'var(--amber)';
-                reasonText.innerText = 'Voice variance elevated. Answer security question to proceed.';
+                reasonText.innerText = 'Voice variance elevated. OTP or security question required.';
             } else {
                 banner.style.borderColor = 'var(--green)';
                 banner.style.background = 'var(--green-glow)';
@@ -1362,7 +1497,58 @@
             }
         }
 
-        // ── Supervisor Override ──────────────────────────────────────
+        // ── Popups: OTP Dispatched Modal ─────────────────────────────
+        function openOtpSentModal(otpCode) {
+            const phone = document.getElementById('input-caller-line').value.trim();
+            document.getElementById('otp-mobile-disp').innerText = phone;
+            document.getElementById('otp-code-disp').innerText = otpCode;
+            document.getElementById('input-verify-otp').value = otpCode;
+            document.getElementById('modal-otp-sent').style.display = 'flex';
+        }
+
+        function closeOtpSentModal() {
+            document.getElementById('modal-otp-sent').style.display = 'none';
+        }
+
+        async function submitVerifyOtpModal() {
+            const otp = document.getElementById('input-verify-otp').value.trim();
+            if (!otp) return;
+
+            const res = await fetch(`/api/v1/call/verify-otp/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ otp: otp })
+            });
+
+            if (res.ok) {
+                closeOtpSentModal();
+                dialogueStage = "AWAIT_INTENT";
+                speakBot("OTP verified successfully. Action authorized.");
+                updateGauge(5.0, 'GREEN');
+                updateFraudGateUI({ is_frozen: false, lock_reason: '2FA OTP Verified' }, 'GREEN', 5.0);
+
+                const accNum = document.getElementById('input-account-num').value.trim();
+                if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
+                else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                pendingAction = null;
+            } else {
+                alert("❌ Invalid OTP code. Transaction remains locked.");
+            }
+        }
+
+        // ── Popups: Account Frozen Modal ─────────────────────────────
+        function openFrozenModal(account, risk, hash) {
+            document.getElementById('frozen-account-disp').innerText = account;
+            document.getElementById('frozen-risk-disp').innerText = risk;
+            document.getElementById('frozen-hash-disp').innerText = hash;
+            document.getElementById('modal-account-frozen').style.display = 'flex';
+        }
+
+        function closeFrozenModal() {
+            document.getElementById('modal-account-frozen').style.display = 'none';
+        }
+
+        // ── Supervisor Override Modal ────────────────────────────────
         function openSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'flex'; }
         function closeSupervisorModal() { document.getElementById('modal-supervisor').style.display = 'none'; }
         async function submitSupervisorOverride() {
@@ -1380,7 +1566,7 @@
             closeSupervisorModal();
             updateGauge(5.0, 'GREEN');
             updateFraudGateUI({ is_frozen: false, lock_reason: `Unfrozen by Supervisor #${supId}` }, 'GREEN', 5.0);
-            speakBot(`Account ${accNum} has been unlocked by supervisor.`);
+            speakBot(`Account ${accNum} has been unlocked by supervisor override.`);
         }
 
         // ── Forensic Audio File Scanner ──────────────────────────────
@@ -1407,6 +1593,7 @@
                 pill.style.color = 'var(--red)';
                 pill.style.borderColor = 'var(--red)';
                 pill.style.backgroundColor = 'var(--red-glow)';
+                openFrozenModal('ACC-FILE-INSPECT', `${data.running_risk_pct.toFixed(1)}%`, 'SHA256-DEMO-FILE-FROZEN');
             } else {
                 pill.innerText = 'AUTHENTIC HUMAN SPEECH VERIFIED';
                 pill.style.color = 'var(--green)';
