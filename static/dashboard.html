@@ -807,13 +807,15 @@
 
                     <!-- Quick Voice Simulation Chips -->
                     <div class="chips-container">
-                        <span class="chips-label">Quick Voice Simulation:</span>
+                        <span class="chips-label">Quick Voice Simulation (Click or Speak into Mic):</span>
                         <div class="chips-row">
-                            <button class="chip-btn" onclick="simulateVoiceInput('yes')">🗣️ "Yes, confirm"</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')">🗣️ "Check Balance"</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 50000')">🗣️ "Transfer ₹50K"</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 25 lakh')">🗣️ "Transfer ₹25L"</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('Max')">🗣️ "Max"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Rajesh Sharma, I confirm this is my account')">🗣️ 1. Confirm Account</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')">🗣️ Balance Inquiry</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 50000')">🗣️ 2. Request Transfer ₹50K</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 25 lakh')">🗣️ Request Transfer ₹25L</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Payment for vendor invoice ABC Corporation')">🗣️ 3. Spoken Purpose ("Vendor invoice payment")</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')">🗣️ 4. Recite Spoken Phrase ("I authorize wire transfer")</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Max')">🗣️ Security Answer: "Max"</button>
                         </div>
                     </div>
 
@@ -1132,7 +1134,7 @@
 
                     // Welcome speech verification
                     dialogueStage = "AWAIT_CONFIRM";
-                    speakBot(`Welcome to Secure Banking. I see you are calling from ${callerPhone}, linked to account ${accNum}. Please say 'Yes' to confirm.`);
+                    speakBot(`Welcome to Secure Voice Banking. I see you are calling from ${callerPhone}, linked to account ${accNum}. For voice biometric verification, please state your full name and confirm your account.`);
                 };
 
                 ws.onmessage = (event) => {
@@ -1268,13 +1270,13 @@
             appendDialogue("user", rawText);
             const accNum = document.getElementById('input-account-num').value.trim();
 
-            // Stage 1: Confirm Account
+            // Stage 1: Confirm Account & Baseline Voice Acquisition
             if (dialogueStage === "AWAIT_CONFIRM") {
-                if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right')) {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account')) {
                     dialogueStage = "AWAIT_INTENT";
-                    speakBot("Account verified. How can I help you? You can say 'Check account balance' or 'Transfer money'.");
+                    speakBot("Voice identity synchronized. How can I assist you today? You can say 'Check account balance' or 'Transfer money'.");
                 } else {
-                    speakBot("Please say 'Yes' to confirm this is your account, or choose another phone number.");
+                    speakBot("Please state your full name and say 'I confirm this is my account' to proceed.");
                 }
                 return;
             }
@@ -1287,14 +1289,41 @@
                     const amount = extractAmountFromSpeech(rawText);
                     document.getElementById('input-transfer-amount').value = amount;
                     pendingTransferAmount = amount;
-                    executeVoiceWireTransfer(accNum, amount);
+                    
+                    // Proceed to Multi-Question Spoken Verification for deep acoustic analysis
+                    dialogueStage = "AWAIT_TRANSFER_PURPOSE";
+                    speakBot(`Understood. Transferring ₹${amount.toLocaleString('en-IN')} to ABC Corp Ltd. For regulatory compliance and voice biometric verification, please state the purpose of this transaction.`);
                 } else {
                     speakBot("I can help you check your account balance or process a wire transfer. Which one would you like?");
                 }
                 return;
             }
 
-            // Stage 3: Awaiting Security Question Answer
+            // Stage 3: Wire Transfer - Spoken Question 1 (Purpose of Payment)
+            if (dialogueStage === "AWAIT_TRANSFER_PURPOSE") {
+                // If caller spoke authorization directly
+                if (text.includes('authorize') || text.includes('authorization')) {
+                    speakBot("Spoken authorization phrase recognized. Verifying acoustic deepfake telemetry...");
+                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                    return;
+                }
+                dialogueStage = "AWAIT_TRANSFER_PHRASE";
+                speakBot(`Payment purpose recorded. To complete voice biometric verification, please repeat this mandatory phrase: 'I authorize this immediate wire transfer from my account'.`);
+                return;
+            }
+
+            // Stage 4: Wire Transfer - Spoken Question 2 (Spoken Biometric Authorization Phrase)
+            if (dialogueStage === "AWAIT_TRANSFER_PHRASE") {
+                if (text.includes('authorize') || text.includes('wire transfer') || text.includes('transfer') || text.includes('account') || text.includes('immediate') || text.includes('yes') || text.includes('confirm')) {
+                    speakBot("Spoken authorization phrase validated. Analyzing multi-window acoustic frames for synthetic speech...");
+                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                } else {
+                    speakBot("Please clearly recite: 'I authorize this immediate wire transfer from my account' to complete authorization.");
+                }
+                return;
+            }
+
+            // Stage 5: Awaiting Security Question Answer (Step-Up Challenge on Caution/Amber)
             if (dialogueStage === "AWAIT_SECURITY_Q") {
                 await verifySecurityAnswerByVoice(text, accNum);
                 return;
