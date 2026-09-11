@@ -1071,6 +1071,26 @@
         </div>
     </div>
 
+    <!-- ── About Section ──────────────────────────────────────────── -->
+    <section id="about-section" style="padding: 2rem; border-top: 1px solid var(--border-subtle); margin-top: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>👤</span> About the Developer
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.2rem;">
+                <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 0.3rem;">Naman Tiwari</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.6rem;">Developer & ML Engineer</div>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8rem;">
+                    <a href="mailto:namantiwari2384@gmail.com" style="color: var(--cyan); text-decoration: none;">📧 namantiwari2384@gmail.com</a>
+                    <a href="https://github.com/Naman225" target="_blank" style="color: var(--cyan); text-decoration: none;">🔗 github.com/Naman225</a>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; font-size: 0.78rem; color: var(--text-muted);">
+            SIH 2026 Submission · Problem Statement 26104 · Blockchain & Cybersecurity
+        </div>
+    </section>
+
     <script>
         // ── State Variables ──────────────────────────────────────────
         let activeCallId = null;
@@ -1305,6 +1325,13 @@
                     }
 
                     const channelData = e.inputBuffer.getChannelData(0);
+                    // ── SILENCE GATE: Skip near-silent frames to prevent ambient noise
+                    // from causing false deepfake escalation. RMS < 0.012 = background noise.
+                    let sumSq = 0;
+                    for (let i = 0; i < channelData.length; i++) sumSq += channelData[i] * channelData[i];
+                    const rms = Math.sqrt(sumSq / channelData.length);
+                    if (rms < 0.012) return; // Silence / ambient — don't send to model
+
                     for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
                     if (pcmBuffer.length >= SAMPLES_PER_CHUNK) {
@@ -1520,6 +1547,18 @@
             appendDialogue("user", rawText);
             const accNum = document.getElementById('input-account-num').value.trim();
 
+            // Stage: Post-Transaction Farewell
+            if (dialogueStage === "AWAIT_FAREWELL") {
+                if (text.includes('no') || text.includes('bye') || text.includes('nothing') || text.includes('thanks') || text.includes('thank you') || text.includes("that's all") || text.includes('nahi') || text.includes('done')) {
+                    speakBot('Thank you for contacting Secure Voice Banking. Have a great day. Goodbye.');
+                    setTimeout(() => stopLiveStream('CALL_ENDED_BY_USER'), 5000);
+                } else {
+                    dialogueStage = 'AWAIT_INTENT';
+                    speakBot('Sure! How can I help you? You can say "Check balance" or "Transfer money".');
+                }
+                return;
+            }
+
             // Stage 1: Confirm Account & Baseline Voice Acquisition
             if (dialogueStage === "AWAIT_CONFIRM") {
                 if (text.includes('yes') || text.includes('confirm') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account')) {
@@ -1536,15 +1575,34 @@
                 if (text.includes('balance') || text.includes('money') || text.includes('details') || text.includes('statement')) {
                     executeVoiceBalanceInquiry(accNum);
                 } else if (text.includes('transfer') || text.includes('send') || text.includes('wire') || text.includes('pay')) {
-                    const amount = extractAmountFromSpeech(rawText);
-                    document.getElementById('input-transfer-amount').value = amount;
-                    pendingTransferAmount = amount;
-                    
-                    // Proceed to Multi-Question Spoken Verification for deep acoustic analysis
-                    dialogueStage = "AWAIT_TRANSFER_PURPOSE";
-                    speakBot(`Understood. Transferring ₹${amount.toLocaleString('en-IN')} to ABC Corp Ltd. For regulatory compliance and voice biometric verification, please state the purpose of this transaction.`);
+                    dialogueStage = 'AWAIT_TRANSFER_AMOUNT';
+                    speakBot('Sure, I can help you with a wire transfer. How much would you like to transfer? Please state the amount.');
                 } else {
                     speakBot("I can help you check your account balance or process a wire transfer. Which one would you like?");
+                }
+                return;
+            }
+
+            // Stage: Transfer Amount Input
+            if (dialogueStage === "AWAIT_TRANSFER_AMOUNT") {
+                const amount = extractAmountFromSpeech(rawText);
+                document.getElementById('input-transfer-amount').value = amount;
+                pendingTransferAmount = amount;
+                dialogueStage = 'AWAIT_TRANSFER_CONFIRM';
+                speakBot(`You would like to transfer ₹${amount.toLocaleString('en-IN')} to ABC Corp Limited. Is that correct? Please say yes to confirm or no to change the amount.`);
+                return;
+            }
+
+            // Stage: Transfer Amount Confirmation
+            if (dialogueStage === "AWAIT_TRANSFER_CONFIRM") {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('proceed')) {
+                    dialogueStage = 'AWAIT_TRANSFER_PURPOSE';
+                    speakBot(`Amount confirmed: ₹${pendingTransferAmount.toLocaleString('en-IN')} to ABC Corp Limited. For regulatory compliance and voice biometric verification, please state the purpose of this transaction.`);
+                } else if (text.includes('no') || text.includes('change') || text.includes('nahi') || text.includes('wrong') || text.includes('different')) {
+                    dialogueStage = 'AWAIT_TRANSFER_AMOUNT';
+                    speakBot('No problem. Please state the correct amount you would like to transfer.');
+                } else {
+                    speakBot('Please say yes to confirm or no to change the amount.');
                 }
                 return;
             }
@@ -1597,6 +1655,8 @@
                     <strong>Available Balance:</strong> <span style="color: var(--green); font-weight:700;">${data.balance}</span><br>
                     <strong>Voice Status:</strong> ${data.voice_integrity}
                 `);
+                dialogueStage = 'AWAIT_FAREWELL';
+                speakBot('Is there anything else I can help you with today?');
             } else if (res.status === 202) {
                 pendingAction = "BALANCE";
                 dialogueStage = "AWAIT_SECURITY_Q";
@@ -1631,6 +1691,8 @@
                     <strong>Beneficiary:</strong> ${data.beneficiary}<br>
                     <strong>Voice Integrity:</strong> ${data.voice_integrity_score}
                 `);
+                dialogueStage = 'AWAIT_FAREWELL';
+                speakBot('Is there anything else I can help you with today?');
             } else if (res.status === 202) {
                 pendingAction = "TRANSFER";
                 dialogueStage = "AWAIT_SECURITY_Q";
@@ -1663,6 +1725,10 @@
 
                 if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
                 else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                else {
+                    dialogueStage = 'AWAIT_FAREWELL';
+                    speakBot('Identity verified. Is there anything else I can help you with?');
+                }
                 pendingAction = null;
             } else {
                 openFrozenModal(accNum, "92.0%", "SHA256-4a8dde81c989a");
@@ -1823,6 +1889,10 @@
                 const accNum = document.getElementById('input-account-num').value.trim();
                 if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
                 else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                else {
+                    dialogueStage = 'AWAIT_FAREWELL';
+                    speakBot('Identity verified. Is there anything else I can help you with?');
+                }
                 pendingAction = null;
             } else {
                 const errData = await res.json().catch(() => ({}));

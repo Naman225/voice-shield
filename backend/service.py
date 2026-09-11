@@ -155,7 +155,15 @@ class ActiveCallSession:
         if self.buffer.is_window_ready():
             window_audio = self.buffer.get_latest_window()
 
-            if is_simulated_clone:
+            # VAD Gate: If the audio window is mostly silence / ambient noise,
+            # skip inference entirely and inject a bonafide (0.0) score.
+            # This prevents false deepfake escalation when the caller is
+            # pausing, listening, or silent between utterances.
+            window_rms = float(np.sqrt(np.mean(window_audio.astype(np.float64) ** 2)))
+            if window_rms < 0.012:
+                # Near-silent window — treat as authentic (no voice = no spoof)
+                self.latest_frame_score = 0.0
+            elif is_simulated_clone:
                 # Demo / simulation mode: bypass AASIST and inject a realistic
                 # synthetic voice clone score to demonstrate RED detection.
                 # Uses a high but not instant score so the EMA ramp-up is visible.
