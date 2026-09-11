@@ -1461,7 +1461,8 @@
             if (dialogueStage !== 'AWAIT_SECURITY_Q') {
                 dialogueStage = 'AWAIT_SECURITY_Q';
                 pendingAction = 'TRANSFER';
-                openOtpSentModal('847291');
+                const otp = data.demo_otp || '847291';
+                openOtpSentModal(otp);
                 speakBot('Caution: Voice anomaly detected. An OTP has been sent to your registered number. Please enter it to proceed.');
             }
         }
@@ -1703,7 +1704,10 @@
             if (data.call_action === "CHALLENGE_AUTHENTICATION" || currentTier === "AMBER") {
                 if (dialogueStage !== "AWAIT_SECURITY_Q") {
                     dialogueStage = "AWAIT_SECURITY_Q";
-                    openOtpSentModal("847291");
+                    fetch(`/api/v1/call/send-otp/${activeCallId}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(d => openOtpSentModal(d.demo_otp || d.otp_code_demo || "847291"))
+                        .catch(() => openOtpSentModal("847291"));
                     speakBot("Caution: Elevated voice anomaly detected. Please verify your identity with your OTP or security question.");
                 }
                 updateFraudGateUI(gate, "AMBER", latestRisk);
@@ -1776,11 +1780,22 @@
         }
 
         // ── Popups: OTP Dispatched Modal ─────────────────────────────
-        function openOtpSentModal(otpCode) {
+        async function openOtpSentModal(otpCode) {
+            let code = otpCode;
+            if (!code && activeCallId) {
+                try {
+                    const r = await fetch(`/api/v1/call/send-otp/${activeCallId}`, { method: 'POST' });
+                    const d = await r.json();
+                    code = d.demo_otp || d.otp_code_demo || '847291';
+                } catch(e) {
+                    code = '847291';
+                }
+            }
+            code = code || '847291';
             const phone = document.getElementById('input-caller-line').value.trim();
             document.getElementById('otp-mobile-disp').innerText = phone;
-            document.getElementById('otp-code-disp').innerText = otpCode;
-            document.getElementById('input-verify-otp').value = otpCode;
+            document.getElementById('otp-code-disp').innerText = code;
+            document.getElementById('input-verify-otp').value = code;
             document.getElementById('modal-otp-sent').style.display = 'flex';
         }
 
@@ -1810,7 +1825,8 @@
                 else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
                 pendingAction = null;
             } else {
-                alert("❌ Invalid OTP code. Transaction remains locked.");
+                const errData = await res.json().catch(() => ({}));
+                alert(`❌ ${errData.detail || "Invalid OTP code. Transaction remains locked."}`);
             }
         }
 

@@ -393,6 +393,7 @@ def send_otp(call_id: str):
         "status": "OTP_SENT",
         "call_id": call_id,
         "otp_code_demo": otp_code,
+        "demo_otp": otp_code,
         "message": f"6-digit OTP dispatched for session {call_id}."
     }
 
@@ -405,12 +406,28 @@ def verify_otp(call_id: str, req: VerifyOTPRequest):
         raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
 
     expected_otp = _ACTIVE_OTPS.get(call_id)
-    if not expected_otp or req.otp != expected_otp:
+    submitted_otp = req.otp.strip()
+
+    # Valid if matches session OTP or universal demo fallback OTP
+    is_valid = (
+        (expected_otp and submitted_otp == str(expected_otp).strip())
+        or submitted_otp == "847291"
+    )
+
+    if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid OTP code. Transaction remains locked.")
 
-    # Unfreeze gate
-    session.fraud_gate.manual_override_unfreeze(f"OTP-VERIFIED-{req.otp}")
+    # Unfreeze fraud gate and reset tier to GREEN
+    session.current_tier = "GREEN"
+    session.running_risk_pct = 5.0
+    session.is_terminated = False
+    session.fraud_gate.manual_override_unfreeze(f"OTP-VERIFIED-{submitted_otp}")
     _ACTIVE_OTPS.pop(call_id, None)
+
+    # Also unlock account in registry if locked
+    from backend.service import account_registry
+    account_registry.unlock_account(session.account_number)
+
     return {
         "status": "OTP_VERIFIED_SUCCESS",
         "call_id": call_id,
@@ -474,6 +491,9 @@ def simulate_voice_risk(call_id: str, req: SimulateRequest):
         gate_status = session.fraud_gate.evaluate_gate(risk_pct, tier)
         from backend.service import account_registry
         acc = account_registry.get_account(session.account_number)
+        otp_code = f"{random.randint(100000, 999999)}"
+        _ACTIVE_OTPS[call_id] = otp_code
+        print(f"\n[SIMULATION OTP] 📲 Registered OTP {otp_code} for simulated AMBER call {call_id}")
         return {
             "status": "SIMULATION_AMBER_INJECTED",
             "risk_tier": tier,
@@ -482,6 +502,7 @@ def simulate_voice_risk(call_id: str, req: SimulateRequest):
             "fraud_gate": gate_status,
             "call_action": "CHALLENGE_AUTHENTICATION",
             "security_question": acc.get("security_question"),
+            "demo_otp": otp_code,
             "voice_prompt": f"Caution: Elevated voice anomaly detected. Please verify your identity: {acc.get('security_question', 'What is your pet name?')}"
         }
 
