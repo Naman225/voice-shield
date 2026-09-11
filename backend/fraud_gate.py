@@ -21,10 +21,11 @@ class FraudPreventionGate:
         Evaluates risk score against threshold and updates gate state.
         """
         if tier == "RED" or running_risk_pct >= self.high_risk_threshold_pct:
-            if not self.is_frozen:
                 self.is_frozen = True
                 self.state = "LOCKED_FREEZE"
                 self.freeze_timestamp = time.time()
+                import hashlib
+                self.evidence_hash = f"SHA256-{hashlib.sha256(f'{self.freeze_timestamp}:{running_risk_pct}'.encode()).hexdigest()[:16]}"
                 self.lock_reason = f"CRITICAL VOICE CLONE DETECTED (Risk Score: {running_risk_pct:.1f}%)"
                 self.secondary_2fa_triggered = True
 
@@ -46,6 +47,7 @@ class FraudPreventionGate:
             "transaction_button_enabled": not self.is_frozen,
             "lock_reason": self.lock_reason,
             "freeze_timestamp": self.freeze_timestamp,
+            "evidence_hash": getattr(self, "evidence_hash", None),
             "secondary_2fa_required": self.secondary_2fa_triggered,
             "action_prompt": "TRANSACTION APPROVAL LOCKED: Voice Cloning Attack Detected. Triggering Out-of-Band 2FA Callback."
             if self.is_frozen

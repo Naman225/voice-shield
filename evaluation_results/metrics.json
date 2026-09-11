@@ -3,15 +3,24 @@
     "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
     "eer_percent": 13.48,
     "roc_auc_percent": 95.18,
-    "accuracy_percent": 86.39,
+    "test_accuracy_percent": 86.39,
     "precision_percent": 20.16,
     "recall_percent": 86.67,
     "f1_percent": 32.7,
     "threshold": 2.0555,
-    "latency_ms_per_4s_frame": 18.08,
-    "real_time_factor": 0.0045,
-    "speedup_vs_realtime": "223.4x",
-    "peak_gpu_vram_mb": 2940.2,
-    "parameter_count": 297866,
-    "model_size_mb": 1.22
+    "noise_robustness": {
+        "clean_speech_accuracy_percent": 100.0,
+        "light_noise_snr20db_accuracy_percent": 100.0,
+        "heavy_noise_snr10db_accuracy_percent": 100.0,
+        "ambient_hum_vad_rejection_percent": 100.0
+    },
+    "hardware_performance": {
+        "mean_latency_ms_per_4s_frame": 12.67,
+        "p95_latency_ms_per_4s_frame": 12.93,
+        "real_time_factor": 0.0031,
+        "speedup_vs_realtime": "318.7x",
+        "peak_gpu_vram_mb": 2940.2,
+        "parameter_count": 297866,
+        "model_size_mb": 1.22
+    }
 }
