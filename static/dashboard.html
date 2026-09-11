@@ -683,9 +683,10 @@
 
     <!-- ── Navigation Tabs ───────────────────────────────────────── -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('tab-live')">📞 Interactive Voice Banking (Live)</button>
-        <button class="tab-btn" onclick="switchTab('tab-forensics')">🔬 Acoustic Forensic Scanner</button>
-        <button class="tab-btn" onclick="switchTab('tab-audit')">📜 Regulatory Compliance Vault</button>
+        <button class="tab-btn active" onclick="switchTab('tab-live', this)">📞 Interactive Voice Banking (Live)</button>
+        <button class="tab-btn" onclick="switchTab('tab-forensics', this)">🔬 Acoustic Forensic Scanner</button>
+        <button class="tab-btn" onclick="switchTab('tab-audit', this)">📜 Regulatory Compliance Vault</button>
+        <button class="tab-btn" onclick="switchTab('tab-admin', this); loadAdminAccounts()">🛡️ Admin & Security Hub</button>
     </div>
 
     <!-- ── Main Dashboard Content ────────────────────────────────── -->
@@ -807,15 +808,20 @@
 
                     <!-- Quick Voice Simulation Chips -->
                     <div class="chips-container">
-                        <span class="chips-label">Quick Voice Simulation (Click or Speak into Mic):</span>
+                        <span class="chips-label" style="color: var(--green);">✅ Genuine Human Voice Steps (Click in order):</span>
                         <div class="chips-row">
-                            <button class="chip-btn" onclick="simulateVoiceInput('Rajesh Sharma, I confirm this is my account')">🗣️ 1. Confirm Account</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')">🗣️ Balance Inquiry</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 50000')">🗣️ 2. Request Transfer ₹50K</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('transfer 25 lakh')">🗣️ Request Transfer ₹25L</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('Payment for vendor invoice ABC Corporation')">🗣️ 3. Spoken Purpose ("Vendor invoice payment")</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')">🗣️ 4. Recite Spoken Phrase ("I authorize wire transfer")</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('Max')">🗣️ Security Answer: "Max"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Rajesh Sharma, I confirm this is my account')" style="border-color: var(--green);">🗣️ 1. Confirm Identity</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')" style="border-color: var(--green);">🗣️ 2. Balance Inquiry</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer money')" style="border-color: var(--green);">🗣️ 3. Request Transfer</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Payment for vendor invoice ABC Corporation')" style="border-color: var(--green);">🗣️ 4. State Purpose</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')" style="border-color: var(--green);">🗣️ 5. Authorize Transfer</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Max')" style="border-color: var(--cyan);">🗣️ Security Answer: "Max"</button>
+                        </div>
+                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">🚨 AI Clone Attack Simulation:</span>
+                        <div class="chips-row" style="margin-top: 0.3rem;">
+                            <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); font-weight:700;">🤖 Simulate AI Voice Clone Attack</button>
+                            <button class="chip-btn" onclick="triggerAmberWarning()" style="border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); font-weight:700;">⚠️ Simulate AMBER Challenge</button>
+                            <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);">🔄 Reset to GREEN (Safe)</button>
                         </div>
                     </div>
 
@@ -930,6 +936,81 @@
         </div>
 
     </main>
+
+    <!-- ── TAB 4: Admin & Security Hub ─────────────────────────── -->
+    <div id="tab-admin" class="tab-content" style="padding: 1.5rem 2rem;">
+        <div style="display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; align-items: start;">
+
+            <!-- Left: Account Registry Table -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🔐 Account Fraud Registry — Live State</span>
+                    <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="loadAdminAccounts()">↻ Refresh</button>
+                </div>
+                <div id="admin-accounts-loading" style="text-align:center; padding: 2rem; color: var(--text-muted);">
+                    Loading account states...
+                </div>
+                <div id="admin-accounts-table" style="display:none; overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Account ID</th>
+                                <th>Owner</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Attack Count</th>
+                                <th>Lock Reason</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-accounts-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right: Supervisor Console -->
+            <div>
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-header">
+                        <span class="card-title">🔓 Quick Supervisor Override</span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Manually lock or unlock any account. Requires supervisor authorization ID.
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <div class="meta-label" style="margin-bottom: 4px;">Account Number</div>
+                        <input type="text" id="admin-account-input" class="select-input" placeholder="e.g. ACC-550189" value="ACC-550189">
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <div class="meta-label" style="margin-bottom: 4px;">Supervisor ID</div>
+                        <input type="text" id="admin-sup-id" class="select-input" placeholder="e.g. SUP-7701" value="SUP-7701">
+                    </div>
+                    <div style="display:flex; gap: 0.5rem;">
+                        <button class="btn-primary" style="flex:1; background: var(--green);" onclick="adminUnlockAccount()">🔓 Unlock</button>
+                        <button class="btn-primary" style="flex:1; background: var(--red); color:white;" onclick="adminLockAccount()">🔒 Lock</button>
+                    </div>
+                    <div id="admin-action-result" style="margin-top: 0.75rem; font-size:0.8rem; color: var(--cyan); display:none;"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📊 Model Performance</span>
+                    </div>
+                    <div style="display:flex; flex-direction: column; gap:0.5rem; font-size: 0.82rem;">
+                        <div class="meta-item"><div class="meta-label">ROC-AUC</div><div class="meta-value" style="color: var(--green);">95.18%</div></div>
+                        <div class="meta-item"><div class="meta-label">Accuracy</div><div class="meta-value">86.39%</div></div>
+                        <div class="meta-item"><div class="meta-label">Equal Error Rate (EER)</div><div class="meta-value" style="color: var(--amber);">13.48%</div></div>
+                        <div class="meta-item"><div class="meta-label">Inference Latency (GPU)</div><div class="meta-value" style="color: var(--cyan);">18.08 ms / 4s frame</div></div>
+                        <div class="meta-item"><div class="meta-label">Real-Time Factor</div><div class="meta-value">223.4× faster than real-time</div></div>
+                        <div class="meta-item"><div class="meta-label">Model Parameters</div><div class="meta-value">297,866 (1.22 MB)</div></div>
+                        <div class="meta-item"><div class="meta-label">GPU Device</div><div class="meta-value">NVIDIA RTX 3060 Laptop</div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 
     <!-- ── POPUP 1: OTP Dispatched Step-Up Modal (AMBER Flow) ─────── -->
     <div id="modal-otp-sent" class="modal-overlay">
@@ -1089,11 +1170,79 @@
         }
 
         // ── Tab Switching ────────────────────────────────────────────
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            if (btn) btn.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+        }
+
+        // ── Admin & Security Hub ─────────────────────────────────────
+        async function loadAdminAccounts() {
+            document.getElementById('admin-accounts-loading').style.display = 'block';
+            document.getElementById('admin-accounts-table').style.display = 'none';
+            try {
+                const res = await fetch('/api/v1/admin/accounts');
+                const data = await res.json();
+                const tbody = document.getElementById('admin-accounts-tbody');
+                tbody.innerHTML = '';
+                const accounts = data.accounts || {};
+                for (const [accId, acc] of Object.entries(accounts)) {
+                    const isLocked = acc.is_locked;
+                    const statusColor = isLocked ? 'var(--red)' : 'var(--green)';
+                    const statusText = isLocked ? '🔴 LOCKED' : '🟢 ACTIVE';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-family: var(--font-mono); font-size:0.82rem;">${accId}</td>
+                        <td>${acc.owner || '-'}</td>
+                        <td style="font-family: var(--font-mono);">₹ ${(acc.balance || 0).toLocaleString('en-IN')}</td>
+                        <td style="color: ${statusColor}; font-weight: 700;">${statusText}</td>
+                        <td style="text-align:center; color: ${acc.attack_count > 0 ? 'var(--amber)' : 'var(--text-muted)'};">${acc.attack_count || 0}</td>
+                        <td style="font-size:0.78rem; color: var(--text-muted);">${acc.lock_reason || '—'}</td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <button onclick="adminActionOnAccount('unlock', '${accId}')"
+                                    style="font-size:0.72rem; padding:3px 8px; background: var(--green); color:black; border:none; border-radius:4px; cursor:pointer;">
+                                    Unlock
+                                </button>
+                                <button onclick="adminActionOnAccount('lock', '${accId}')"
+                                    style="font-size:0.72rem; padding:3px 8px; background: var(--red); color:white; border:none; border-radius:4px; cursor:pointer;">
+                                    Lock
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+                document.getElementById('admin-accounts-loading').style.display = 'none';
+                document.getElementById('admin-accounts-table').style.display = 'block';
+            } catch (e) {
+                document.getElementById('admin-accounts-loading').innerText = 'Error loading accounts. Is the server running?';
+            }
+        }
+
+        async function adminActionOnAccount(action, accId) {
+            const endpoint = action === 'unlock'
+                ? `/api/v1/admin/account/unlock/${accId}`
+                : `/api/v1/admin/account/lock/${accId}`;
+            const res = await fetch(endpoint, { method: 'POST' });
+            const data = await res.json();
+            const el = document.getElementById('admin-action-result');
+            el.style.display = 'block';
+            el.innerText = `✅ ${data.message || data.status} — ${accId}`;
+            setTimeout(() => loadAdminAccounts(), 600);
+        }
+
+        async function adminUnlockAccount() {
+            const accId = document.getElementById('admin-account-input').value.trim();
+            if (!accId) return;
+            await adminActionOnAccount('unlock', accId);
+        }
+
+        async function adminLockAccount() {
+            const accId = document.getElementById('admin-account-input').value.trim();
+            if (!accId) return;
+            await adminActionOnAccount('lock', accId);
         }
 
         // ── Live Call Ingest & Speech Recognition ────────────────────
@@ -1243,7 +1392,107 @@
 
         // ── Voice Input & Dialogue State Machine ─────────────────────
         function simulateVoiceInput(text) {
+            if (!activeCallId) {
+                alert('Please start a live call first (click "Start Live Call").');
+                return;
+            }
             handleVoiceInput(text);
+        }
+
+        // ── Attack / Reset Simulation (calls backend /simulate endpoint) ─
+        async function triggerCloneAttack() {
+            if (!activeCallId) {
+                alert('Please start a live call first (click "Start Live Call").');
+                return;
+            }
+            appendDialogue('user', '[AI CLONE ATTACK INITIATED — Synthetic voice substituted]');
+
+            const res = await fetch(`/api/v1/call/simulate/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'CLONE' })
+            });
+            const data = await res.json();
+
+            // Drive the UI exactly as a real telemetry update would
+            latestRisk = data.running_risk_pct || 92.0;
+            currentTier = data.risk_tier || 'RED';
+            updateGauge(latestRisk, currentTier);
+            riskHistory.push(latestRisk);
+            if (riskHistory.length > 60) riskHistory.shift();
+            drawTimeline();
+
+            updateFraudGateUI(data.fraud_gate || {}, currentTier, latestRisk);
+
+            if (currentTier === 'RED' || data.call_action === 'CUT_CALL') {
+                openFrozenModal(
+                    data.account_number || document.getElementById('input-account-num').value,
+                    `${latestRisk.toFixed(1)}%`,
+                    `SHA256-${Math.random().toString(36).substring(2,12)}`
+                );
+                speakBot(data.voice_prompt || 'Unauthorized access detected: synthetic voice clone identified. Terminating call immediately.');
+                logAuditRecord(activeCallId, document.getElementById('input-account-num').value, latestRisk, 'Voice Clone Detected', 'CALL_CUT_AND_FROZEN');
+                stopLiveStream('AUTOCUT_RED');
+            }
+        }
+
+        async function triggerAmberWarning() {
+            if (!activeCallId) {
+                alert('Please start a live call first (click "Start Live Call").');
+                return;
+            }
+            appendDialogue('user', '[AMBER ALERT — Voice anomaly detected mid-call]');
+
+            const res = await fetch(`/api/v1/call/simulate/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'AMBER' })
+            });
+            const data = await res.json();
+
+            latestRisk = data.running_risk_pct || 55.0;
+            currentTier = data.risk_tier || 'AMBER';
+            updateGauge(latestRisk, currentTier);
+            riskHistory.push(latestRisk);
+            if (riskHistory.length > 60) riskHistory.shift();
+            drawTimeline();
+            updateFraudGateUI(data.fraud_gate || {}, currentTier, latestRisk);
+
+            if (dialogueStage !== 'AWAIT_SECURITY_Q') {
+                dialogueStage = 'AWAIT_SECURITY_Q';
+                pendingAction = 'TRANSFER';
+                openOtpSentModal('847291');
+                speakBot('Caution: Voice anomaly detected. An OTP has been sent to your registered number. Please enter it to proceed.');
+            }
+        }
+
+        async function triggerResetGreen() {
+            if (!activeCallId) {
+                alert('Please start a live call first.');
+                return;
+            }
+            const res = await fetch(`/api/v1/call/simulate/${activeCallId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'RESET' })
+            });
+            const data = await res.json();
+
+            latestRisk = 5.0;
+            currentTier = 'GREEN';
+            isFrozen = false;
+            updateGauge(5.0, 'GREEN');
+            riskHistory.push(5.0);
+            if (riskHistory.length > 60) riskHistory.shift();
+            drawTimeline();
+            updateFraudGateUI({ is_frozen: false, lock_reason: 'Voice Shield: Authentic caller confirmed.' }, 'GREEN', 5.0);
+
+            // Unlock accounts too so call can continue
+            const accNum = document.getElementById('input-account-num').value.trim();
+            await fetch(`/api/v1/admin/account/unlock/${accNum}`, { method: 'POST' });
+
+            appendDialogue('bot', '✅ Acoustic threat cleared. Voice identity re-verified as authentic human. Session resumed at GREEN baseline.');
+            dialogueStage = 'AWAIT_INTENT';
         }
 
         // Helper to extract amounts from natural speech
@@ -1618,13 +1867,18 @@
 
             const pill = document.getElementById('forensic-verdict-pill');
             if (data.risk_tier === 'RED') {
-                pill.innerText = 'CRITICAL DEEPFAKE CLONE DETECTED';
+                pill.innerText = '🚨 CRITICAL DEEPFAKE CLONE DETECTED';
                 pill.style.color = 'var(--red)';
                 pill.style.borderColor = 'var(--red)';
                 pill.style.backgroundColor = 'var(--red-glow)';
                 openFrozenModal('ACC-FILE-INSPECT', `${data.running_risk_pct.toFixed(1)}%`, 'SHA256-DEMO-FILE-FROZEN');
+            } else if (data.risk_tier === 'AMBER') {
+                pill.innerText = '⚠️ ELEVATED VOICE ANOMALY DETECTED (AMBER)';
+                pill.style.color = 'var(--amber)';
+                pill.style.borderColor = 'var(--amber)';
+                pill.style.backgroundColor = 'var(--amber-glow)';
             } else {
-                pill.innerText = 'AUTHENTIC HUMAN SPEECH VERIFIED';
+                pill.innerText = '✅ AUTHENTIC HUMAN SPEECH VERIFIED';
                 pill.style.color = 'var(--green)';
                 pill.style.borderColor = 'var(--green)';
                 pill.style.backgroundColor = 'var(--green-glow)';

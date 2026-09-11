@@ -5,11 +5,18 @@ from scipy import signal
 TARGET_SR = 16000
 TARGET_SAMPLES = 64600  # ~4.0375s at 16kHz
 
+# Minimum RMS energy below which audio is treated as silence/noise and skipped.
+# Background hum / laptop fans / quiet rooms typically have RMS < 0.010.
+# Human speech typically has RMS > 0.020+.
+RMS_NOISE_FLOOR = 0.015
+
 
 class AudioNormalizer:
     """
     Standardizes audio streams into fixed-length 16kHz mono float32 arrays.
     SincNet raw waveform model input format.
+    Includes RMS noise floor gating to prevent background noise from being
+    analyzed as speech, which was causing false deepfake positives.
     """
 
     def __init__(self, target_sr: int = TARGET_SR, target_samples: int = TARGET_SAMPLES):
@@ -65,10 +72,28 @@ class AudioNormalizer:
                 start = (curr_len - self.target_samples) // 2
             return waveform[start : start + self.target_samples].astype(np.float32)
 
+    def is_speech(self, waveform: np.ndarray) -> bool:
+        """
+        VAD gate: returns True only if the audio has sufficient energy
+        to be genuine speech vs. background noise / silence.
+        Computes RMS over the entire chunk; returns False if below floor.
+        """
+        rms = float(np.sqrt(np.mean(waveform.astype(np.float64) ** 2)))
+        return rms >= RMS_NOISE_FLOOR
+
     def process(self, raw_samples: np.ndarray, orig_sr: int = TARGET_SR) -> np.ndarray:
-        """Executes full normalization pipeline."""
+        """
+        Executes full normalization pipeline.
+        Returns a zeroed 64600-sample array if RMS energy is below the
+        noise floor (prevents background noise from triggering AASIST).
+        """
         mono = self.to_mono(raw_samples)
         resampled = self.resample(mono, orig_sr)
+
+        # VAD Gate: skip inference if audio is too quiet (background noise)
+        if not self.is_speech(resampled):
+            return np.zeros(self.target_samples, dtype=np.float32)
+
         normalized = self.normalize_amplitude(resampled)
         framed = self.fix_length(normalized)
         return framed

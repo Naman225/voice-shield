@@ -30,11 +30,13 @@ Modern financial fraud operations increasingly exploit AI voice cloning (ElevenL
 ┌─────────────────────────────────────────────────────────┐
 │             FastAPI Server  (main.py)                   │
 │                                                         │
-│  POST /api/v1/call/start    → create session            │
-│  POST /api/v1/call/chunk    → ingest audio chunk        │
-│  WS   /ws/call/{id}         → live bidirectional stream │
-│  GET  /api/v1/call/status   → risk dashboard            │
-│  POST /api/v1/call/unfreeze → supervisor override       │
+│  POST /api/v1/call/start        → create session        │
+│  WS   /ws/call/{id}             → live audio stream     │
+│  POST /api/v1/call/upload-audio → forensic file scan    │
+│  GET  /api/v1/call/status/{id}  → risk dashboard        │
+│  POST /api/v1/bank/transfer     → guarded wire transfer │
+│  POST /api/v1/call/verify-otp   → step-up 2FA verify    │
+│  POST /api/v1/admin/accounts    → admin oversight        │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        ▼
@@ -202,9 +204,18 @@ python src/pipeline/train.py --epochs 10
 | Method | Endpoint | Description |
 |:---|:---|:---|
 | `POST` | `/api/v1/call/start` | Start a new call monitoring session |
-| `POST` | `/api/v1/call/chunk` | Ingest a raw PCM audio chunk |
 | `GET`  | `/api/v1/call/status/{call_id}` | Live risk score + fraud gate status |
-| `POST` | `/api/v1/call/unfreeze/{call_id}` | Supervisor override to unfreeze account |
+| `POST` | `/api/v1/call/upload-audio` | Upload audio file for forensic inspection |
+| `POST` | `/api/v1/call/unfreeze/{call_id}` | Supervisor override to unfreeze call gate |
+| `POST` | `/api/v1/call/send-otp/{call_id}` | Dispatch step-up OTP for flagged call |
+| `POST` | `/api/v1/call/verify-otp/{call_id}` | Verify OTP and unlock fraud gate |
+| `POST` | `/api/v1/call/inquiry` | Query account balance (tier-protected) |
+| `POST` | `/api/v1/call/verify-question/{call_id}` | Verify security question answer |
+| `POST` | `/api/v1/bank/transfer` | Execute wire transfer (tier-protected) |
+| `POST` | `/api/v1/account/unlock/{account_number}` | Supervisor account unlock |
+| `GET`  | `/api/v1/admin/accounts` | Admin: inspect all account states |
+| `POST` | `/api/v1/admin/account/lock/{account_number}` | Admin: manual account lockout |
+| `POST` | `/api/v1/admin/account/unlock/{account_number}` | Admin: supervisor re-authorization |
 | `DELETE` | `/api/v1/call/{call_id}` | End call and clear session |
 | `WS` | `/ws/call/{call_id}` | Bidirectional real-time audio stream |
 
@@ -216,11 +227,14 @@ Full interactive docs at `/docs` when the server is running.
 
 | Metric | AASIST (upstream) | Voice Shield Fine-Tuned |
 |:---|:---|:---|
-| **Equal Error Rate (EER)** | ~1.13% (ASVspoof 2019) | **< 0.95%** (IndieFake) |
+| **Equal Error Rate (EER)** | ~1.13% (ASVspoof 2019) | **13.48%** (IndieFake) |
+| **ROC-AUC** | — | **95.18%** |
+| **Accuracy** | — | **86.39%** |
+| **Recall (Spoof Detection)** | — | **86.67%** |
 | **Parameters** | 297,866 | 297,866 |
-| **Model Size** | 1.3 MB | **1.28 MB** |
-| **Inference latency (GPU)** | ~38 ms | **~18 ms** |
-| **Inference latency (CPU)** | ~110 ms | **~95 ms** |
+| **Model Size** | 1.3 MB | **1.22 MB** |
+| **Inference latency (GPU)** | ~38 ms | **~18 ms** (RTX 3060) |
+| **Real-Time Factor** | — | **223.4× faster than real-time** |
 | **Buffer hop** | N/A | **1.0 s rolling** |
 | **Fraud gate reaction** | N/A | **< 50 ms** |
 

@@ -112,6 +112,13 @@ class AccountInquiryRequest(BaseModel):
     account_number: str = Field(default="ACC-550189", description="Source bank account ID to inquire")
 
 
+class SimulateRequest(BaseModel):
+    mode: str = Field(
+        ...,
+        description="Simulation mode: CLONE (injects RED), AMBER (injects AMBER), RESET (back to GREEN)"
+    )
+
+
 # -------------------------------------------------------------
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
@@ -163,13 +170,13 @@ def start_call(req: Optional[StartCallRequest] = None):
 async def upload_audio_file(
     file: UploadFile = File(..., description="Audio file (.wav, .mp3, .ogg, .flac) to analyze"),
     call_id: Optional[str] = Form(None, description="Optional call session ID. Auto-generated if omitted."),
-    caller_id: Optional[str] = Form("Executive Desk #8941", description="Caller phone or identifier"),
-    account_number: Optional[str] = Form("ACC-550189", description="Target bank account ID"),
+    caller_id: Optional[str] = Form("Forensic Inspector", description="Caller phone or identifier"),
+    account_number: Optional[str] = Form("ACC-FORENSIC-INSPECT", description="Target bank account ID"),
     stream_by_chunks: bool = Form(True, description="If True, streams through sliding buffer in 1.0s increments to simulate live call progression.")
 ):
     """
     Uploads a recorded audio file to verify voice authenticity with fine-tuned AASIST.
-    Returns real-time risk score, confidence percentage, risk tier, and active fraud gate state.
+    Evaluates multi-frame acoustic windows to accurately detect synthetic speech and real voices.
     """
     try:
         content = await file.read()
@@ -178,14 +185,17 @@ async def upload_audio_file(
         raise HTTPException(status_code=400, detail=f"Failed to decode audio file '{file.filename}': {e}")
 
     if call_id is None:
-        call_id = f"CALL-{uuid.uuid4().hex[:8].upper()}"
+        call_id = f"INSPECT-{uuid.uuid4().hex[:8].upper()}"
+
+    # Use isolated inspection account to prevent bank lock contamination
+    inspect_account = "ACC-FORENSIC-INSPECT" if (call_id.startswith("INSPECT-") or account_number == "ACC-550189") else account_number
 
     session = session_manager.get_session(call_id)
     if not session:
         session = session_manager.create_session(
             call_id=call_id,
             caller_id=caller_id,
-            account_number=account_number,
+            account_number=inspect_account,
         )
 
     # Convert to mono and resample to 16kHz
@@ -196,26 +206,81 @@ async def upload_audio_file(
     total_samples = len(mono)
     duration_sec = round(total_samples / 16000.0, 2)
 
-    if stream_by_chunks and total_samples > 16000:
-        chunk_size = 16000
-        last_result = None
-        for i in range(0, total_samples, chunk_size):
-            chunk = mono[i : i + chunk_size]
-            last_result = session.process_audio_chunk(chunk, sample_rate=16000)
-            if last_result.get("fraud_gate", {}).get("is_frozen"):
-                break
-        res = last_result or session.get_summary()
-    else:
-        res = session.process_audio_chunk(mono, sample_rate=16000)
+    # Multi-frame acoustic forensic analysis
+    win_len = 64600  # ~4.04s
+    hop = 16000      # 1.0s hop
+    frame_scores = []
 
-    res["uploaded_filename"] = file.filename
-    res["audio_duration_sec"] = duration_sec
-    res["input_sample_rate"] = sr
-    res["verdict"] = (
-        "AUTHENTIC_HUMAN_CALLER"
-        if res["risk_tier"] == "GREEN"
-        else ("SUSPICIOUS_VOICE_AMBER" if res["risk_tier"] == "AMBER" else "CRITICAL_VOICE_CLONE_DETECTED")
-    )
+    if total_samples < win_len:
+        repeats = int(math.ceil(win_len / max(1, total_samples)))
+        w = np.tile(mono, repeats)[:win_len]
+        s = session.scorer.score_frame(w)
+        frame_scores.append(s)
+        session.risk_engine.update_risk(s)
+    else:
+        for st in range(0, total_samples - win_len + 1, hop):
+            w = mono[st : st + win_len]
+            if np.sqrt(np.mean(w.astype(np.float64) ** 2)) < 0.015:
+                continue
+            s = session.scorer.score_frame(w)
+            frame_scores.append(s)
+            session.risk_engine.update_risk(s)
+
+    if not frame_scores:
+        # Fallback to direct fixed length if all windows skipped
+        framed = session.normalizer.fix_length(mono)
+        s = session.scorer.score_frame(framed)
+        frame_scores.append(s)
+        session.risk_engine.update_risk(s)
+
+    peak_score = max(frame_scores)
+    mean_score = sum(frame_scores) / len(frame_scores)
+
+    # Calibrated forensic classification
+    if peak_score >= 0.70 or mean_score >= 0.55:
+        risk_tier = "RED"
+        running_risk_pct = round(max(peak_score * 100.0, 75.0), 1)
+        verdict = "CRITICAL_VOICE_CLONE_DETECTED"
+        gate_state = "LOCKED_FREEZE"
+        is_frozen = True
+    elif peak_score >= 0.40:
+        risk_tier = "AMBER"
+        running_risk_pct = round(peak_score * 100.0, 1)
+        verdict = "SUSPICIOUS_VOICE_AMBER"
+        gate_state = "CAUTION"
+        is_frozen = False
+    else:
+        risk_tier = "GREEN"
+        running_risk_pct = round(max(mean_score * 100.0, 5.0), 1)
+        verdict = "AUTHENTIC_HUMAN_CALLER"
+        gate_state = "APPROVED"
+        is_frozen = False
+
+    session.running_risk_pct = running_risk_pct
+    session.current_tier = risk_tier
+    session.latest_frame_score = peak_score
+
+    res = {
+        "call_id": call_id,
+        "caller_id": caller_id,
+        "account_number": inspect_account,
+        "duration_sec": duration_sec,
+        "chunks_ingested": len(frame_scores),
+        "samples_in_buffer": total_samples,
+        "latest_frame_score": round(peak_score * 100.0, 2),
+        "running_risk_pct": running_risk_pct,
+        "risk_tier": risk_tier,
+        "fraud_gate": {
+            "state": gate_state,
+            "is_frozen": is_frozen,
+            "lock_reason": "Forensic audio scan: " + ("Deepfake clone confirmed" if is_frozen else ("Acoustic anomaly detected" if risk_tier == "AMBER" else "Authentic human speech verified"))
+        },
+        "call_action": "CUT_CALL" if is_frozen else ("CHALLENGE_AUTHENTICATION" if risk_tier == "AMBER" else "CONTINUE"),
+        "uploaded_filename": file.filename,
+        "audio_duration_sec": duration_sec,
+        "input_sample_rate": sr,
+        "verdict": verdict,
+    }
     return res
 
 
@@ -354,6 +419,98 @@ def verify_otp(call_id: str, req: VerifyOTPRequest):
     }
 
 
+@app.post("/api/v1/call/simulate/{call_id}")
+def simulate_voice_risk(call_id: str, req: SimulateRequest):
+    """
+    Demo / Simulation Mode — Directly injects voice risk into a call session.
+    Used by the dashboard simulation chips to demonstrate the full detection
+    pipeline without requiring real recorded audio.
+
+    Modes:
+      CLONE  → Injects synthetic voice clone scores (RED tier, triggers fraud gate)
+      AMBER  → Injects elevated risk scores (AMBER tier, triggers OTP/challenge)
+      RESET  → Resets session to GREEN (authentic voice baseline)
+    """
+    session = session_manager.get_session(call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
+
+    mode = req.mode.upper().strip()
+
+    if mode == "CLONE":
+        # Simulate consecutive high-score frames so EMA crosses RED threshold (>= 75%)
+        for _ in range(6):
+            risk_pct, tier = session.risk_engine.update_risk(0.95)
+        session.running_risk_pct = risk_pct
+        session.current_tier = tier
+        session.latest_frame_score = 0.95
+        gate_status = session.fraud_gate.evaluate_gate(risk_pct, tier)
+
+        if tier == "RED" or gate_status.get("is_frozen"):
+            from backend.service import account_registry
+            account_registry.lock_account(
+                session.account_number,
+                f"Voice clone attack simulated (Risk: {risk_pct:.1f}%)"
+            )
+            session.is_terminated = True
+
+        return {
+            "status": "SIMULATION_CLONE_INJECTED",
+            "risk_tier": tier,
+            "running_risk_pct": risk_pct,
+            "latest_frame_score": 92.0,
+            "fraud_gate": gate_status,
+            "call_action": "CUT_CALL" if tier == "RED" else "CONTINUE",
+            "voice_prompt": "Unauthorized access detected: synthetic voice clone identified. Terminating call immediately."
+        }
+
+    elif mode == "AMBER":
+        # Simulate 2 moderately-elevated frames to reach AMBER
+        for _ in range(3):
+            risk_pct, tier = session.risk_engine.update_risk(0.60)
+        session.running_risk_pct = risk_pct
+        session.current_tier = tier
+        session.latest_frame_score = 0.60
+        gate_status = session.fraud_gate.evaluate_gate(risk_pct, tier)
+        from backend.service import account_registry
+        acc = account_registry.get_account(session.account_number)
+        return {
+            "status": "SIMULATION_AMBER_INJECTED",
+            "risk_tier": tier,
+            "running_risk_pct": risk_pct,
+            "latest_frame_score": 60.0,
+            "fraud_gate": gate_status,
+            "call_action": "CHALLENGE_AUTHENTICATION",
+            "security_question": acc.get("security_question"),
+            "voice_prompt": f"Caution: Elevated voice anomaly detected. Please verify your identity: {acc.get('security_question', 'What is your pet name?')}"
+        }
+
+    elif mode == "RESET":
+        # Reset to clean GREEN baseline
+        session.risk_engine.reset()
+        session.running_risk_pct = 5.0
+        session.current_tier = "GREEN"
+        session.latest_frame_score = 0.05
+        session.is_terminated = False
+        session.fraud_gate.reset()
+        gate_status = session.fraud_gate.get_status()
+        return {
+            "status": "SIMULATION_RESET",
+            "risk_tier": "GREEN",
+            "running_risk_pct": 5.0,
+            "latest_frame_score": 5.0,
+            "fraud_gate": gate_status,
+            "call_action": "CONTINUE",
+            "voice_prompt": None
+        }
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown simulation mode '{req.mode}'. Use: CLONE, AMBER, or RESET"
+        )
+
+
 @app.post("/api/v1/call/inquiry")
 def inquire_account_details(req: AccountInquiryRequest):
     """
@@ -449,7 +606,55 @@ def unlock_account(account_number: str):
     """Supervisor endpoint to unlock an account locked due to repeat attacks."""
     from backend.service import account_registry
     account_registry.unlock_account(account_number)
+    session_manager.unlock_account_sessions(account_number)
     return {"status": "ACCOUNT_UNLOCKED", "account_number": account_number}
+
+
+# -------------------------------------------------------------
+# ADMIN OVERSIGHT & SUPERVISOR CONTROL PANEL
+# -------------------------------------------------------------
+@app.get("/api/v1/admin/accounts")
+def admin_get_all_accounts():
+    """
+    Returns full state of all accounts in the fraud registry.
+    Used by the Admin & Security Hub in the dashboard.
+    """
+    from backend.service import account_registry
+    return {
+        "status": "OK",
+        "accounts": account_registry.accounts
+    }
+
+
+@app.post("/api/v1/admin/account/unlock/{account_number}")
+def admin_unlock_account(account_number: str):
+    """
+    Supervisor re-authorization: unlocks a frozen account and clears
+    all active call session fraud gate locks for that account.
+    """
+    from backend.service import account_registry
+    account_registry.unlock_account(account_number)
+    session_manager.unlock_account_sessions(account_number)
+    return {
+        "status": "ACCOUNT_UNLOCKED",
+        "account_number": account_number,
+        "message": f"Account {account_number} has been cleared by admin override."
+    }
+
+
+@app.post("/api/v1/admin/account/lock/{account_number}")
+def admin_lock_account(account_number: str):
+    """
+    Manual supervisor lockout — for testing fraud gate behavior or
+    emergency freeze of a suspected compromised account.
+    """
+    from backend.service import account_registry
+    account_registry.lock_account(account_number, "Manual admin lockout via supervisor console.")
+    return {
+        "status": "ACCOUNT_LOCKED",
+        "account_number": account_number,
+        "message": f"Account {account_number} manually frozen by admin override."
+    }
 
 
 # -------------------------------------------------------------
@@ -486,6 +691,7 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
 
             samples = message.get("samples", [])
             sample_rate = message.get("sample_rate", 16000)
+            is_simulated_clone = bool(message.get("is_simulated_clone", False))
             if "account_number" in message:
                 session.account_number = message["account_number"]
             if "caller_id" in message:
@@ -496,6 +702,7 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
                 response = session.process_audio_chunk(
                     pcm_samples=pcm_array,
                     sample_rate=sample_rate,
+                    is_simulated_clone=is_simulated_clone,
                 )
                 await websocket.send_json(response)
             else:

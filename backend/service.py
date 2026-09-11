@@ -154,7 +154,15 @@ class ActiveCallSession:
         # 3. Run AASIST inference once 4.04 s window is filled
         if self.buffer.is_window_ready():
             window_audio = self.buffer.get_latest_window()
-            self.latest_frame_score = self.scorer.score_frame(window_audio)
+
+            if is_simulated_clone:
+                # Demo / simulation mode: bypass AASIST and inject a realistic
+                # synthetic voice clone score to demonstrate RED detection.
+                # Uses a high but not instant score so the EMA ramp-up is visible.
+                self.latest_frame_score = 0.92
+            else:
+                self.latest_frame_score = self.scorer.score_frame(window_audio)
+
             self.running_risk_pct, self.current_tier = self.risk_engine.update_risk(
                 self.latest_frame_score
             )
@@ -246,3 +254,19 @@ class CallSessionManager:
             del self.sessions[call_id]
             return True
         return False
+
+    def unlock_account_sessions(self, account_number: str) -> int:
+        """
+        Clears fraud gate locks on all active call sessions belonging to
+        a given account (called after admin/supervisor unlocks the account).
+        Returns the number of sessions that were cleared.
+        """
+        cleared = 0
+        for session in self.sessions.values():
+            if session.account_number == account_number:
+                session.fraud_gate.manual_override_unfreeze("ADMIN-ACCOUNT-UNLOCK")
+                session.current_tier = "GREEN"
+                session.running_risk_pct = 5.0
+                session.is_terminated = False
+                cleared += 1
+        return cleared

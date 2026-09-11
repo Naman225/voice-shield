@@ -72,10 +72,15 @@ class AcousticScorer:
         if len(waveform) == 0:
             return 0.0
 
-        # Peak-normalise if needed (guard against silent frames)
+        # Silence / VAD-gate check:
+        # If the normalizer returned zeros (background noise below RMS floor),
+        # return 0.0 (bonafide) immediately — no model inference needed.
         max_val = np.max(np.abs(waveform))
-        if max_val > 1e-6:
-            waveform = waveform / max_val
+        if max_val <= 1e-6:
+            return 0.0  # Silent frame — treat as authentic (no voice = no spoof)
+
+        # Peak-normalise before model inference
+        waveform = waveform / max_val
 
         tensor = (
             torch.from_numpy(waveform.astype(np.float32))
