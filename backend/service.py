@@ -160,7 +160,7 @@ class ActiveCallSession:
             # This prevents false deepfake escalation when the caller is
             # pausing, listening, or silent between utterances.
             window_rms = float(np.sqrt(np.mean(window_audio.astype(np.float64) ** 2)))
-            if window_rms < 0.012:
+            if window_rms < 0.003:
                 # Near-silent window — treat as authentic (no voice = no spoof)
                 self.latest_frame_score = 0.0
             elif is_simulated_clone:

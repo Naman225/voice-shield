@@ -1065,20 +1065,23 @@
                 utter.rate = 1.0;
                 utter.pitch = 1.0;
 
-                utter.onend = () => {
-                    // 350ms cooldown to ensure speaker sound wave clears room
+                let done = false;
+                const releaseBotSpeaking = () => {
+                    if (done) return;
+                    done = true;
                     setTimeout(() => {
                         isBotSpeaking = false;
-                        document.getElementById('live-heard-text').innerText = "🎤 Your turn to speak! (Listening...)";
+                        document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
                         if (onComplete) onComplete();
-                    }, 350);
+                    }, 250);
                 };
 
-                utter.onerror = () => {
-                    isBotSpeaking = false;
-                    document.getElementById('live-heard-text').innerText = "🎤 Your turn to speak! (Listening...)";
-                    if (onComplete) onComplete();
-                };
+                utter.onend = releaseBotSpeaking;
+                utter.onerror = releaseBotSpeaking;
+
+                // Safety fallback: auto-release after speech estimated duration (max 5.5s)
+                const safeTimeout = Math.min(5500, Math.max(1800, text.split(' ').length * 350 + 500));
+                setTimeout(releaseBotSpeaking, safeTimeout);
 
                 window.speechSynthesis.speak(utter);
             } else {
@@ -1231,12 +1234,12 @@
                     }
 
                     const channelData = e.inputBuffer.getChannelData(0);
-                    // ── SILENCE GATE: Skip near-silent frames to prevent ambient noise
-                    // from causing false deepfake escalation. RMS < 0.012 = background noise.
+                    // ── SILENCE GATE: Only drop true room silence (RMS < 0.002).
+                    // Allows mobile phone speakers and conversational voices to pass into AASIST!
                     let sumSq = 0;
                     for (let i = 0; i < channelData.length; i++) sumSq += channelData[i] * channelData[i];
                     const rms = Math.sqrt(sumSq / channelData.length);
-                    if (rms < 0.012) return; // Silence / ambient — don't send to model
+                    if (rms < 0.002) return;
 
                     for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
@@ -1262,6 +1265,9 @@
             }
         }
 
+        let speechDebounceTimer = null;
+        let speechTranscriptBuffer = '';
+
         function initSpeechRecognition() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1271,23 +1277,46 @@
                 speechRec.lang = 'en-IN';
 
                 speechRec.onresult = (e) => {
-                    if (isBotSpeaking) return; // Do not transcribe bot's own voice
+                    if (isBotSpeaking) return;
                     let interim = '';
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
                         if (e.results[i].isFinal) {
-                            const spoken = e.results[i][0].transcript.trim();
-                            document.getElementById('live-heard-text').innerText = spoken;
-                            handleVoiceInput(spoken);
+                            speechTranscriptBuffer += ' ' + e.results[i][0].transcript;
                         } else {
                             interim += e.results[i][0].transcript;
                         }
                     }
-                    if (interim) document.getElementById('live-heard-text').innerText = interim;
+                    const liveDisplay = (speechTranscriptBuffer + ' ' + interim).trim();
+                    if (liveDisplay) {
+                        document.getElementById('live-heard-text').innerText = `🗣️ "${liveDisplay}"`;
+                    }
+
+                    // ── PATIENT SPEECH BUFFER: Wait 1.3 seconds of silence before finalizing.
+                    // This gives the user / phone speaker time to finish their sentence naturally!
+                    clearTimeout(speechDebounceTimer);
+                    speechDebounceTimer = setTimeout(() => {
+                        const finalSpoken = speechTranscriptBuffer.trim();
+                        if (finalSpoken.length > 0 && !isBotSpeaking) {
+                            speechTranscriptBuffer = '';
+                            handleVoiceInput(finalSpoken);
+                        }
+                    }, 1300);
                 };
 
                 speechRec.onerror = (err) => console.log('SpeechRec error:', err);
-                speechRec.onend = () => { if (isStreaming && speechRec) speechRec.start(); };
-                speechRec.start();
+                speechRec.onend = () => {
+                    if (isStreaming) {
+                        setTimeout(() => {
+                            try {
+                                if (isStreaming && speechRec) speechRec.start();
+                            } catch (e) {}
+                        }, 150);
+                    }
+                };
+
+                try {
+                    speechRec.start();
+                } catch (e) {}
             }
         }
 
