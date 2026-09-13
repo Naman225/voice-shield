@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- ── SEO & Enterprise Metadata ───────────────────────────────────── -->
-    <title>Voice Shield 🛡️ Real-Time Voice Cloning Detection & Conversational Fraud Gate</title>
+    <title>Voice Shield - Real-Time Voice Cloning Detection & Conversational Fraud Gate</title>
     <meta name="description" content="Voice Shield: Hands-free voice-driven banking IVR protected by real-time AASIST voice clone detection, automated security challenges, and instant deepfake call termination.">
     <meta name="keywords" content="voice cloning detection, deepfake defense, audio forensics, AASIST, banking fraud gate, telephony security, conversational IVR, enterprise voice biometrics">
     <meta name="author" content="Voice Shield Enterprise Cyber Defense Team">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="http://localhost:8000/dashboard">
 
-    <meta property="og:title" content="Voice Shield 🛡️ Real-Time Voice Clone Detection & Fraud Gate">
+    <meta property="og:title" content="Voice Shield - Real-Time Voice Clone Detection & Fraud Gate">
     <meta property="og:description" content="Voice-driven interactive banking with real-time deepfake defense and automated call interception.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="http://localhost:8000/dashboard">
@@ -660,7 +660,7 @@
     <!-- ── Top Header ────────────────────────────────────────────── -->
     <header>
         <div class="brand-cluster">
-            <div class="brand-icon">🛡️</div>
+            <div class="brand-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
             <div class="brand-titles">
                 <h1>VOICE SHIELD <span class="brand-badge">Enterprise v2.0</span></h1>
                 <div class="brand-sub">Conversational Voice Banking with Real-Time Deepfake Interception</div>
@@ -673,19 +673,19 @@
                 <span>AASIST Core: <strong>CUDA Active</strong></span>
             </div>
             <div class="pill">
-                <span>🔒 <strong>TLS 256-bit Stream</strong></span>
+                <span><strong>TLS 256-bit Stream</strong></span>
             </div>
             <div class="pill">
-                <span>⚡ Latency: <strong>&lt; 35ms</strong></span>
+                <span>Latency: <strong>&lt; 35ms</strong></span>
             </div>
         </div>
     </header>
 
     <!-- ── Navigation Tabs ───────────────────────────────────────── -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('tab-live', this)">📞 Interactive Voice Banking (Live)</button>
-        <button class="tab-btn" onclick="switchTab('tab-forensics', this)">🔬 Acoustic Forensic Scanner</button>
-        <button class="tab-btn" onclick="switchTab('tab-audit', this)">📜 Regulatory Compliance Vault</button>
+        <button class="tab-btn active" onclick="switchTab('tab-live', this)">Interactive Voice Banking (Live)</button>
+        <button class="tab-btn" onclick="switchTab('tab-forensics', this)">Acoustic Forensic Scanner</button>
+        <button class="tab-btn" onclick="switchTab('tab-audit', this)">Regulatory Compliance Vault</button>
     </div>
 
     <!-- ── Main Dashboard Content ────────────────────────────────── -->
@@ -698,11 +698,11 @@
                 <!-- Left: Dynamic Caller Ingest & Setup -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">🎙️ Telephony Ingest</span>
+                        <span class="card-title">Telephony Ingest</span>
                     </div>
 
                     <button id="btn-live-stream" class="btn-live-stream" onclick="toggleLiveStream()">
-                        <span id="mic-icon">🔴</span>
+                        <span id="mic-icon" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>
                         <span id="mic-text">Start Live Call</span>
                     </button>
 
@@ -750,8 +750,8 @@
                 <!-- Center: Acoustic Forensics & Risk Gauge -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">🧠 Real-Time Acoustic Forensics</span>
-                        <span id="tier-badge" class="tier-pill">🟢 GREEN SAFE</span>
+                        <span class="card-title">Real-Time Acoustic Forensics</span>
+                        <span id="tier-badge" class="tier-pill">GREEN SAFE</span>
                     </div>
 
                     <div class="gauge-container">
@@ -788,52 +788,52 @@
                 <!-- Right: Hands-Free Conversational Banking IVR Dialogue -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">🤖 Conversational Banking IVR</span>
+                        <span class="card-title">Conversational Banking IVR</span>
                         <span id="ivr-status-pill" class="brand-badge">Standby</span>
                     </div>
 
                     <!-- Live Dialogue Chat Stream -->
                     <div id="dialogue-container" class="dialogue-box">
                         <div class="msg-bubble msg-bot">
-                            👋 Welcome to Voice Shield Banking. Click <strong>"Start Live Call"</strong> to speak naturally with the AI IVR.
+                            Welcome to Voice Shield Banking. Click <strong>"Start Live Call"</strong> to speak naturally with the AI IVR.
                         </div>
                     </div>
 
                     <!-- Live Speech Recognition Transcript (Echo Protected) -->
                     <div class="heard-box" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                         <div style="display: flex; align-items: center; gap: 0.4rem; flex: 1; min-width: 0;">
-                            <span class="heard-label" style="white-space: nowrap;">🎤 Heard:</span>
+                            <span class="heard-label" style="white-space: nowrap;">Heard:</span>
                             <span id="live-heard-text" class="heard-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Listening for speech...</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
-                            <button id="btn-submit-speech" onclick="submitSpeechNow()" style="display: none; background: var(--green); color: #000; border: none; border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; font-weight: 700; cursor: pointer;">Send Now ➔</button>
-                            <button id="btn-bot-mute" onclick="toggleBotMute()" style="background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; cursor: pointer;" title="Toggle bot voice output">🔊 Bot Voice: ON</button>
+                            <button id="btn-submit-speech" onclick="submitSpeechNow()" style="display: none; background: var(--green); color: #000; border: none; border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; font-weight: 700; cursor: pointer;">Send Now</button>
+                            <button id="btn-bot-mute" onclick="toggleBotMute()" style="background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; cursor: pointer;" title="Toggle bot voice output">Bot Voice: ON</button>
                         </div>
                     </div>
 
                     <!-- Quick Voice Simulation Chips -->
                     <div class="chips-container">
-                        <span class="chips-label" style="color: var(--green);">✅ Genuine Human Voice Steps (Click in order):</span>
+                        <span class="chips-label" style="color: var(--green);">Genuine Human Voice Steps (Click in order):</span>
                         <div class="chips-row">
-                            <button class="chip-btn" onclick="simulateVoiceInput('Rajesh Sharma, I confirm this is my account')" style="border-color: var(--green);">🗣️ 1. Confirm Identity</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')" style="border-color: var(--green);">🗣️ 2. Balance Inquiry</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('transfer money')" style="border-color: var(--green);">🗣️ 3. Request Transfer</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('Payment for vendor invoice ABC Corporation')" style="border-color: var(--green);">🗣️ 4. State Purpose</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')" style="border-color: var(--green);">🗣️ 5. Authorize Transfer</button>
-                            <button class="chip-btn" onclick="simulateVoiceInput('Max')" style="border-color: var(--cyan);">🗣️ Security Answer: "Max"</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Rajesh Sharma, I confirm this is my account')" style="border-color: var(--green);">1. Confirm Identity</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('check account balance')" style="border-color: var(--green);">2. Balance Inquiry</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('transfer money')" style="border-color: var(--green);">3. Request Transfer</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Payment for vendor invoice ABC Corporation')" style="border-color: var(--green);">4. State Purpose</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')" style="border-color: var(--green);">5. Authorize Transfer</button>
+                            <button class="chip-btn" onclick="simulateVoiceInput('Max')" style="border-color: var(--cyan);">Security Answer: "Max"</button>
                         </div>
-                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">🚨 AI Clone Attack Simulation:</span>
+                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">AI Clone Attack Simulation:</span>
                         <div class="chips-row" style="margin-top: 0.3rem;">
-                            <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); font-weight:700;">🤖 Simulate AI Voice Clone Attack</button>
-                            <button class="chip-btn" onclick="triggerAmberWarning()" style="border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); font-weight:700;">⚠️ Simulate AMBER Challenge</button>
-                            <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);">🔄 Reset to GREEN (Safe)</button>
+                            <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); font-weight:700;">Simulate AI Voice Clone Attack</button>
+                            <button class="chip-btn" onclick="triggerAmberWarning()" style="border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); font-weight:700;">Simulate AMBER Challenge</button>
+                            <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);">Reset to GREEN (Safe)</button>
                         </div>
                     </div>
 
                     <!-- Fraud Gate Banner -->
                     <div id="gate-banner" class="gate-banner" style="margin-top: 0.85rem;">
                         <div class="gate-state" id="gate-state-text">
-                            <span>✅</span> APPROVED
+                            <span></span> APPROVED
                         </div>
                         <div class="gate-reason" id="gate-reason-text">
                             Authentic caller voice patterns confirmed.
@@ -858,12 +858,12 @@
         <div id="tab-forensics" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">🔬 Acoustic File Inspection</span>
+                    <span class="card-title">Acoustic File Inspection</span>
                     <span style="font-size: 0.75rem; color: var(--text-muted);">Supports .mp3, .wav, .flac, .ogg</span>
                 </div>
 
                 <div class="dropzone-container" id="dropzone" onclick="document.getElementById('file-input').click()">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">📁</div>
+                    <div style="font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--cyan); font-weight: 700;">[ FILE UPLOAD ]</div>
                     <div style="font-size: 1.1rem; font-weight: 700;">Drag & Drop Audio File or Click to Browse</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
                         Runs full neural vocoder artifact analysis and graph attention spectrogram evaluation.
@@ -903,8 +903,8 @@
         <div id="tab-audit" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <span class="card-title">📜 Regulatory Compliance & Tamper-Evident Audit Vault</span>
-                    <button class="btn-secondary" onclick="alert('Audit export ready: Compliant with RBI Cyber Security Framework.')">📥 Export Audit CSV</button>
+                    <span class="card-title">Regulatory Compliance & Tamper-Evident Audit Vault</span>
+                    <button class="btn-secondary" onclick="alert('Audit export ready: Compliant with RBI Cyber Security Framework.')">Export Audit CSV</button>
                 </div>
 
                 <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
@@ -946,7 +946,7 @@
     <!-- ── POPUP 1: OTP Dispatched Step-Up Modal (AMBER Flow) ─────── -->
     <div id="modal-otp-sent" class="modal-overlay">
         <div class="modal" style="border-color: var(--amber); box-shadow: 0 0 40px var(--amber-glow);">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📲</div>
+            <div style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--amber); font-weight: 700;">[ 2FA AUTHENTICATION ]</div>
             <div class="modal-title" style="color: var(--amber);">STEP-UP 2FA: OTP DISPATCHED</div>
             <div class="modal-body">
                 A high-security 6-digit One-Time Password has been dispatched to your registered phone number:
@@ -970,7 +970,7 @@
     <!-- ── POPUP 2: Critical Account Frozen Modal (RED Flow) ──────── -->
     <div id="modal-account-frozen" class="modal-overlay">
         <div class="modal" style="border-color: var(--red); box-shadow: 0 0 50px var(--red-glow);">
-            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🚨</div>
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--red); font-weight: 700;">[ FRAUD INTERCEPTED ]</div>
             <div class="modal-title" style="color: var(--red);">FRAUD GATE ACTIVATED: ACCOUNT FROZEN</div>
             <div class="modal-body" style="line-height: 1.6;">
                 <strong>CRITICAL SECURITY BREACH PREVENTED:</strong><br>
@@ -980,7 +980,7 @@
                 • <strong>Status:</strong> Active telephone call terminated & all bank transactions locked.<br>
                 • <strong>Evidence Hash:</strong> <span id="frozen-hash-disp" class="hash-code">SHA256-4a8dde81c989a...</span>
                 <div id="frozen-alert-banner" style="margin-top: 0.85rem; padding: 0.6rem 0.85rem; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); border-radius: var(--radius-sm); font-size: 0.78rem; color: #fca5a5; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>🛡️</span> <div><strong>SECURITY ALERT DISPATCHED:</strong> Incident report broadcast to Fraud Operations & Bank Security Center.</div>
+                    <div><strong>SECURITY ALERT DISPATCHED:</strong> Incident report broadcast to Fraud Operations & Bank Security Center.</div>
                 </div>
             </div>
             <div class="modal-actions">
@@ -993,7 +993,7 @@
     <!-- ── Supervisor Override Modal ───────────────────────────────── -->
     <div id="modal-supervisor" class="modal-overlay">
         <div class="modal">
-            <div class="modal-title">🔓 Supervisor Authentication Override</div>
+            <div class="modal-title">Supervisor Authentication Override</div>
             <div class="modal-body">
                 Enter authorized supervisor credential to clear active voice clone security locks after out-of-band validation.
             </div>
@@ -1080,7 +1080,7 @@
             isBotMuted = !isBotMuted;
             const btn = document.getElementById('btn-bot-mute');
             if (btn) {
-                btn.innerText = isBotMuted ? '🔇 Bot Voice: MUTED' : '🔊 Bot Voice: ON';
+                btn.innerText = isBotMuted ? 'Bot Voice: MUTED' : 'Bot Voice: ON';
                 btn.style.borderColor = isBotMuted ? 'var(--amber)' : 'var(--border-subtle)';
                 btn.style.color = isBotMuted ? 'var(--amber)' : 'var(--text-secondary)';
                 btn.style.background = isBotMuted ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)';
@@ -1088,7 +1088,7 @@
             if (isBotMuted && window.speechSynthesis) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = false;
-                document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
             }
         }
 
@@ -1110,7 +1110,7 @@
             if (!isBotMuted && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = true;
-                document.getElementById('live-heard-text').innerText = "🤖 Bot speaking... (Please wait)";
+                document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
 
                 const utter = new SpeechSynthesisUtterance(text);
                 utter.rate = 1.05;
@@ -1122,7 +1122,7 @@
                     done = true;
                     setTimeout(() => {
                         isBotSpeaking = false;
-                        document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                        document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
                         // Fresh recognizer session — fresh result indices, so
                         // nothing from the bot's own utterance can bleed in.
                         lastProcessedResultIndex = 0;
@@ -1143,7 +1143,7 @@
                 window.speechSynthesis.speak(utter);
             } else {
                 isBotSpeaking = false;
-                document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
                 lastProcessedResultIndex = 0;
                 latestSpokenText = '';
                 if (isStreaming && speechRec) {
@@ -1157,7 +1157,7 @@
             const container = document.getElementById('dialogue-container');
             const bubble = document.createElement('div');
             bubble.className = `msg-bubble ${sender === 'bot' ? 'msg-bot' : 'msg-user'}`;
-            bubble.innerHTML = `${sender === 'bot' ? '🤖 ' : '👤 '}${text}`;
+            bubble.innerHTML = `${sender === 'bot' ? 'IVR: ' : 'CALLER: '}${text}`;
             container.appendChild(bubble);
             container.scrollTop = container.scrollHeight;
         }
@@ -1213,7 +1213,7 @@
 
                     const btn = document.getElementById('btn-live-stream');
                     btn.className = 'btn-live-stream recording';
-                    document.getElementById('mic-icon').innerText = '⏹️';
+                    document.getElementById('mic-icon').style.background = '#22d3ee';
                     document.getElementById('mic-text').innerText = 'End Live Call';
                     document.getElementById('ivr-status-pill').innerText = 'In Call';
 
@@ -1304,7 +1304,7 @@
             latestSpokenText = '';
             const sendBtn = document.getElementById('btn-submit-speech');
             if (sendBtn) sendBtn.style.display = 'none';
-            document.getElementById('live-heard-text').innerText = `⏳ Processing: "${finalSpoken}"...`;
+            document.getElementById('live-heard-text').innerText = `Processing: "${finalSpoken}"...`;
             handleVoiceInput(finalSpoken);
         }
 
@@ -1335,7 +1335,7 @@
 
                     const sendBtn = document.getElementById('btn-submit-speech');
                     if (latestSpokenText) {
-                        document.getElementById('live-heard-text').innerText = `🗣️ "${latestSpokenText}" (listening... ⏳)`;
+                        document.getElementById('live-heard-text').innerText = `"${latestSpokenText}" (listening...)`;
                         if (sendBtn) sendBtn.style.display = 'inline-block';
                     }
 
@@ -1407,12 +1407,12 @@
             const btn = document.getElementById('btn-live-stream');
             if (reason === "AUTOCUT_RED") {
                 btn.className = 'btn-live-stream terminated';
-                document.getElementById('mic-icon').innerText = '🚫';
+                document.getElementById('mic-icon').style.background = '#ef4444';
                 document.getElementById('mic-text').innerText = 'Call Cut (AI Blocked)';
                 document.getElementById('ivr-status-pill').innerText = 'Call Cut';
             } else {
                 btn.className = 'btn-live-stream';
-                document.getElementById('mic-icon').innerText = '🔴';
+                document.getElementById('mic-icon').style.background = '#ef4444';
                 document.getElementById('mic-text').innerText = 'Start Live Call';
                 document.getElementById('ivr-status-pill').innerText = 'Standby';
             }
@@ -1527,7 +1527,7 @@
             const accNum = document.getElementById('input-account-num').value.trim();
             await fetch(`/api/v1/account/unlock/${accNum}`, { method: 'POST' });
 
-            appendDialogue('bot', '✅ Acoustic threat cleared. Voice identity re-verified as authentic human. Session resumed at GREEN baseline.');
+            appendDialogue('bot', 'Acoustic threat cleared. Voice identity re-verified as authentic human. Session resumed at GREEN baseline.');
             dialogueStage = 'AWAIT_INTENT';
             stepUpVerifiedOnce = false;
             preChallengeStage = null;
@@ -1705,7 +1705,7 @@
             const data = await res.json();
 
             if (res.status === 200) {
-                showResultCard("💸 Wire Transfer Authorized", `
+                showResultCard("Wire Transfer Authorized", `
                     <strong>Status:</strong> <span style="color: var(--green);">TRANSFER_SUCCESSFUL</span><br>
                     <strong>Receipt ID:</strong> ${data.receipt_id}<br>
                     <strong>Amount Transferred:</strong> ₹ ${amount.toLocaleString('en-IN')}<br>
@@ -1839,21 +1839,21 @@
             if (tier === 'RED') {
                 fillPath.style.stroke = 'var(--red)';
                 disp.style.color = 'var(--red)';
-                tierBadge.innerText = '🔴 RED (CLONE DETECTED)';
+                tierBadge.innerText = 'RED (CLONE DETECTED)';
                 tierBadge.style.color = 'var(--red)';
                 tierBadge.style.borderColor = 'var(--red)';
                 tierBadge.style.backgroundColor = 'var(--red-glow)';
             } else if (tier === 'AMBER') {
                 fillPath.style.stroke = 'var(--amber)';
                 disp.style.color = 'var(--amber)';
-                tierBadge.innerText = '🟡 AMBER (CAUTION / CHALLENGE)';
+                tierBadge.innerText = 'AMBER (CAUTION / CHALLENGE)';
                 tierBadge.style.color = 'var(--amber)';
                 tierBadge.style.borderColor = 'var(--amber)';
                 tierBadge.style.backgroundColor = 'var(--amber-glow)';
             } else {
                 fillPath.style.stroke = 'var(--green)';
                 disp.style.color = 'var(--green)';
-                tierBadge.innerText = '🟢 GREEN (AUTHENTIC CALLER)';
+                tierBadge.innerText = 'GREEN (AUTHENTIC CALLER)';
                 tierBadge.style.color = 'var(--green)';
                 tierBadge.style.borderColor = 'var(--green)';
                 tierBadge.style.backgroundColor = 'var(--green-glow)';
@@ -1868,19 +1868,19 @@
             if (gate.is_frozen || tier === 'RED') {
                 banner.style.borderColor = 'var(--red)';
                 banner.style.background = 'var(--red-glow)';
-                stateText.innerHTML = '<span>🚨</span> CALL CUT & ACCOUNT LOCKED';
+                stateText.innerHTML = 'CALL CUT & ACCOUNT LOCKED';
                 stateText.style.color = 'var(--red)';
                 reasonText.innerText = gate.lock_reason || 'Unauthorized voice clone detected. Call terminated.';
             } else if (tier === 'AMBER') {
                 banner.style.borderColor = 'var(--amber)';
                 banner.style.background = 'var(--amber-glow)';
-                stateText.innerHTML = '<span>⚠️</span> CAUTION: CHALLENGE REQUIRED';
+                stateText.innerHTML = 'CAUTION: CHALLENGE REQUIRED';
                 stateText.style.color = 'var(--amber)';
                 reasonText.innerText = 'Voice variance elevated. OTP or security question required.';
             } else {
                 banner.style.borderColor = 'var(--green)';
                 banner.style.background = 'var(--green-glow)';
-                stateText.innerHTML = '<span>✅</span> APPROVED';
+                stateText.innerHTML = '<span></span> APPROVED';
                 stateText.style.color = 'var(--green)';
                 reasonText.innerText = 'Authentic caller voice patterns confirmed.';
             }
@@ -1958,7 +1958,7 @@
                 preChallengePrompt = null;
             } else {
                 const errData = await res.json().catch(() => ({}));
-                alert(`❌ ${errData.detail || "Invalid OTP code. Transaction remains locked."}`);
+                alert(errData.detail || "Invalid OTP code. Transaction remains locked.");
             }
         }
 
@@ -2015,18 +2015,18 @@
 
             const pill = document.getElementById('forensic-verdict-pill');
             if (data.risk_tier === 'RED') {
-                pill.innerText = '🚨 CRITICAL DEEPFAKE CLONE DETECTED';
+                pill.innerText = 'CRITICAL DEEPFAKE CLONE DETECTED';
                 pill.style.color = 'var(--red)';
                 pill.style.borderColor = 'var(--red)';
                 pill.style.backgroundColor = 'var(--red-glow)';
                 openFrozenModal('ACC-FILE-INSPECT', `${data.running_risk_pct.toFixed(1)}%`, 'SHA256-DEMO-FILE-FROZEN');
             } else if (data.risk_tier === 'AMBER') {
-                pill.innerText = '⚠️ ELEVATED VOICE ANOMALY DETECTED (AMBER)';
+                pill.innerText = 'ELEVATED VOICE ANOMALY DETECTED (AMBER)';
                 pill.style.color = 'var(--amber)';
                 pill.style.borderColor = 'var(--amber)';
                 pill.style.backgroundColor = 'var(--amber-glow)';
             } else {
-                pill.innerText = '✅ AUTHENTIC HUMAN SPEECH VERIFIED';
+                pill.innerText = 'AUTHENTIC HUMAN SPEECH VERIFIED';
                 pill.style.color = 'var(--green)';
                 pill.style.borderColor = 'var(--green)';
                 pill.style.backgroundColor = 'var(--green-glow)';
