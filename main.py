@@ -1,7 +1,7 @@
 """
 Voice Shield 🛡️
-AI-Powered Real-Time Voice Cloning Detection & Financial Fraud Prevention Engine
-Smart India Hackathon (SIH 2026) Official Technical Backend Service
+Enterprise In-Stream Voice Biometrics & Real-Time Deepfake Fraud Prevention Engine
+Carrier-Grade Telephony & Contact Center Voice Security
 """
 
 import os
@@ -20,7 +20,7 @@ _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CURRENT_DIR not in sys.path:
     sys.path.insert(0, _CURRENT_DIR)
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Response
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -30,8 +30,8 @@ from pydantic import BaseModel, Field
 from backend.service import CallSessionManager
 
 app = FastAPI(
-    title="Voice Shield 🛡️ AI Voice Cloning Detection & Fraud Prevention API",
-    description="SIH 2026: Real-Time Impersonation Defense & Active Banking Fraud Gate Backend",
+    title="Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention API",
+    description="Carrier-Grade Real-Time Voice Biometric Impersonation Defense & Autonomous Banking Fraud Gate",
     version="2.0.0",
 )
 
@@ -122,12 +122,23 @@ class SimulateRequest(BaseModel):
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
 @app.get("/")
-def root():
+def root(request: Request):
+    """Serves the interactive Voice Shield Dashboard to browsers and JSON status to API clients."""
+    user_agent = request.headers.get("user-agent", "").lower()
+    accept = request.headers.get("accept", "").lower()
+
+    # If requested by browser, serve dashboard UI directly
+    if "text/html" in accept or ("mozilla" in user_agent and "json" not in accept):
+        dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
+        if os.path.isfile(dashboard_file):
+            return FileResponse(dashboard_file)
+
+    # API manifest for tests and health checks
     return {
-        "service": "Voice Shield 🛡️ Real-Time Voice Cloning Detection & Fraud Prevention",
+        "service": "Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention Engine",
         "status": "ONLINE",
         "version": "2.0.0",
-        "target_accent": "Indian English (IndieFake Adaptive AASIST Model)",
+        "target_accent": "Indian English & Multi-lingual (IndieFake Fine-Tuned AASIST)",
         "dashboard_ui": "/dashboard",
         "documentation": "/docs",
     }
@@ -140,6 +151,19 @@ def get_dashboard():
     if not os.path.isfile(dashboard_file):
         raise HTTPException(status_code=404, detail="Dashboard UI file not found.")
     return FileResponse(dashboard_file)
+
+
+@app.get("/api/v1/health")
+def health_check():
+    """Health check endpoint for cloud load balancers and Render."""
+    return {
+        "service": "Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention Engine",
+        "status": "ONLINE",
+        "version": "2.0.0",
+        "target_accent": "Indian English & Multi-lingual (IndieFake Fine-Tuned AASIST)",
+        "dashboard_ui": "/dashboard",
+        "documentation": "/docs",
+    }
 
 
 # -------------------------------------------------------------

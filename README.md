@@ -1,66 +1,41 @@
 # Voice Shield 🛡️
 
-### Real-Time AI Voice Clone Detection & Active Financial Fraud Prevention
-**Smart India Hackathon (SIH) 2026 — Official Technical Submission**
+### Enterprise In-Stream AI Voice Clone Detection & Autonomous Fraud Prevention Engine
+**Carrier-Grade Telephony & Contact Center Voice Biometrics**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
 
 ---
 
 ## 📌 What is Voice Shield?
 
-Modern financial fraud operations increasingly exploit AI voice cloning (ElevenLabs, XTTS, Bark, HiFi-GAN) to impersonate executives, bank customers, and government officials over phone calls. These synthetic voices fool traditional speaker-verification systems and human call-centre agents alike.
+Modern financial fraud operations increasingly exploit generative AI voice cloning (ElevenLabs, XTTS, Bark, HiFi-GAN, VALL-E) to impersonate corporate executives, bank customers, and account holders over telephone channels. These synthetic voices bypass traditional voice biometrics and trick human relationship managers.
 
-**Voice Shield** is a production-ready, real-time backend that:
-1. **Monitors every live call** as a continuous audio stream (VoIP / cellular).
-2. **Detects synthetic voice artifacts** using **AASIST** — a graph attention network fine-tuned on Indian-accented deepfake data (IndieFake dataset).
-3. **Freezes wire transfers** the moment an impersonation attack is detected, before money leaves the account.
+**Voice Shield** is an enterprise-grade, in-stream cybersecurity middleware that:
+1. **Listens to live telephony audio** in continuous 1-second streaming chunks (VoIP / SIP / cellular).
+2. **Detects synthetic vocoder artifacts** using **AASIST** — a graph attention neural network fine-tuned on Indian-accented and multi-lingual voice data (IndieFake dataset).
+3. **Autonomously freezes transactions** and cuts the call within milliseconds, stopping fraud *before* money leaves the bank.
 
 ---
 
 ## 🏗️ System Architecture
 
-```
-📞  Live Audio (VoIP / SIP / Cellular)  OR  📁 Recorded Audio (.mp3 / .wav)
-         │
-         ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                      FastAPI Server  (main.py)                         │
-│                                                                        │
-│  GET  /dashboard                → SOC Operator & Demo Dashboard        │
-│  POST /api/v1/call/start        → Initialize call session              │
-│  WS   /ws/call/{id}             → Bidirectional real-time audio stream │
-│  POST /api/v1/call/upload-audio → Multi-frame forensic file scanner    │
-│  GET  /api/v1/call/status/{id}  → Live risk telemetry & fraud status   │
-│  POST /api/v1/call/simulate/{id}→ Demo attack / caution / reset inject │
-│  POST /api/v1/bank/transfer     → Tier-guarded wire transfer           │
-│  POST /api/v1/call/send-otp     → Dispatches step-up 2FA SMS OTP       │
-│  POST /api/v1/call/verify-otp   → Verifies OTP & unfreezes gate        │
-│  GET  /api/v1/admin/accounts    → Admin registry oversight             │
-│  POST /api/v1/admin/account/unlock → Supervisor re-authorization       │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                ActiveCallSession  (backend/service.py)                 │
-│                                                                        │
-│  1. AudioNormalizer    →  16 kHz mono + RMS VAD noise floor gating     │
-│  2. SlidingAudioBuffer →  4.04 s FIFO window (64,600 samples, 1 s hop) │
-│  3. AcousticScorer     →  AASIST neural inference → P(spoof) ∈ [0, 1]  │
-│  4. EMARiskEngine      →  EMA smoothing (α=0.70) → GREEN / AMBER / RED │
-│  5. FraudPreventionGate→  Autonomous interlock: allow / 2FA / freeze   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                       ┌────────────┼────────────┐
-                       ▼            ▼            ▼
-                   🟢 GREEN      🟡 AMBER     🔴 RED
-                 Allow Txn    Step-Up 2FA   Auto-Cut Call
-                              Challenge     & Freeze Account
-                                            + SHA-256 Audit
-```
+![Voice Shield System Architecture](architecture.png)
+
+### End-to-End Pipeline Breakdown
+
+| Pipeline Stage | Module | Technical Function |
+|:---|:---|:---|
+| **Step 1: Audio Normalizer** | `backend/normalizer.py` | • Converts stereo channels to mono float32.<br>• Resamples to carrier-standard 16,000 Hz.<br>• Generates 64,640-sample sliding windows (~4.04s) with a 1.0s hop step.<br>• Applies RMS VAD energy gating (`RMS < 0.012`) to prevent room noise false triggers. |
+| **Step 2: Snippet Front-End** | `src/models/aasist_core.py` | • Operates on raw sound waves directly using learnable SincNet bandpass filterbanks.<br>• Zero loss of audio detail (no lossy spectrogram binning or heuristic zero-crossing rates). |
+| **Step 3A: Spectral Graph (Frequency Check)** | `AASIST Graph Attention` | • Graph attention network evaluating frequency nodes.<br>• Catches unnatural robotic pitch jumps, phase discontinuities, and high-frequency vocoder spikes (>4 kHz). |
+| **Step 3B: Temporal Graph (Timing Check)** | `AASIST Graph Attention` | • Graph attention network evaluating temporal nodes.<br>• Detects unnatural speech speed, missing micro-breaths, and rigid neural TTS cadence. |
+| **Step 4: Decision Head** | `Linear + Softmax` | • Fuses spectral and temporal graph representations.<br>• Computes frame-level posterior probability: $P(\text{Spoof}) \in [0.0, 1.0]$. |
+| **Step 5: Dynamic Risk Smoother (EMA)** | `backend/risk_engine.py` | • Prevents transient noise, coughing, or line clicks from causing false alarms.<br>• Formula: $\text{New Score} = 0.70 \times \text{Old Score} + 0.30 \times \text{Frame Score}$. |
 
 ### Risk Scoring Formula (EMA)
 
@@ -137,7 +112,7 @@ voice-shield/
 │
 ├── evaluation_results/
 │   ├── metrics.json            # Ground-truth evaluation benchmarks
-│   └── benchmark_summary.md    # SIH presentation slides metrics sheet
+│   └── benchmark_summary.md    # Production evaluation metrics summary sheet
 │
 ├── test_samples/               # Verified authentic human & synthetic clone test clips
 │   ├── demo_real_human.mp3     # Authentic human speech (Scores: ~5% GREEN)
@@ -236,30 +211,6 @@ python src/engine/stream_engine.py --audio test_samples/audio1.mp3
 
 ---
 
-## 🌐 REST API Reference
-
-| Method | Endpoint | Description |
-|:---|:---|:---|
-| `GET`  | `/` | System health check & version manifest |
-| `GET`  | `/dashboard` | Enterprise SOC Operator & Demo Dashboard |
-| `POST` | `/api/v1/call/start` | Initialize a new call monitoring session |
-| `WS`   | `/ws/call/{call_id}` | Bidirectional WebSocket stream for real-time PCM audio |
-| `POST` | `/api/v1/call/upload-audio` | Multi-frame forensic file scanner with VAD analysis |
-| `GET`  | `/api/v1/call/status/{call_id}` | Live risk telemetry, frame scores, and fraud gate state |
-| `POST` | `/api/v1/call/simulate/{call_id}` | Demo control: inject `CLONE` (RED), `AMBER`, or `RESET` (GREEN) |
-| `POST` | `/api/v1/call/send-otp/{call_id}` | Dispatches step-up 2FA SMS OTP for AMBER flagged call |
-| `POST` | `/api/v1/call/verify-otp/{call_id}` | Verifies 6-digit OTP and unlocks fraud gate |
-| `POST` | `/api/v1/call/inquiry` | Confidential balance inquiry (tier-protected) |
-| `POST` | `/api/v1/call/verify-question/{call_id}` | Step-up security question answer verification |
-| `POST` | `/api/v1/bank/transfer` | Execute wire transfer (blocked if AMBER or RED) |
-| `POST` | `/api/v1/call/unfreeze/{call_id}` | Call-level supervisor unfreeze |
-| `GET`  | `/api/v1/admin/accounts` | Admin: view full state of all fraud registry accounts |
-| `POST` | `/api/v1/admin/account/lock/{account_number}` | Admin: manual emergency account freeze |
-| `POST` | `/api/v1/admin/account/unlock/{account_number}` | Admin: supervisor account unlock & session unfreeze |
-| `DELETE` | `/api/v1/call/{call_id}` | Terminate call session and clean up memory buffers |
-
-Interactive documentation is available at `http://localhost:8000/docs`.
-
 ---
 
 ## 📊 Model Performance & Enterprise Test Verification
@@ -305,11 +256,11 @@ Simulated under calibrated additive Gaussian and channel distortions matching en
 
 ---
 
-## 👥 Team — Voice Shield (SIH 2026)
+## 👥 Core Development Team
 
 | Member | Role |
 |:---|:---|
-| **Naman** | AI core — AASIST fine-tuning, IndieFake dataset, model integration |
+| **Naman** | AI Core & ML Architecture — AASIST fine-tuning, IndieFake dataset, inference pipeline |
 | **Nikunj** | Backend — FastAPI server, WebSocket streaming, EMA risk engine, fraud gate |
 | **Harshit** | Frontend — Platform dashboard, scroll-video hero, UI/UX |
 
