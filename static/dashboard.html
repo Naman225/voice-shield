@@ -800,9 +800,15 @@
                     </div>
 
                     <!-- Live Speech Recognition Transcript (Echo Protected) -->
-                    <div class="heard-box">
-                        <span class="heard-label">🎤 Heard:</span>
-                        <span id="live-heard-text" class="heard-text">Listening for speech...</span>
+                    <div class="heard-box" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem; flex: 1; min-width: 0;">
+                            <span class="heard-label" style="white-space: nowrap;">🎤 Heard:</span>
+                            <span id="live-heard-text" class="heard-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Listening for speech...</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                            <button id="btn-submit-speech" onclick="submitSpeechNow()" style="display: none; background: var(--green); color: #000; border: none; border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; font-weight: 700; cursor: pointer;">Send Now ➔</button>
+                            <button id="btn-bot-mute" onclick="toggleBotMute()" style="background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.72rem; cursor: pointer;" title="Toggle bot voice output">🔊 Bot Voice: ON</button>
+                        </div>
                     </div>
 
                     <!-- Quick Voice Simulation Chips -->
@@ -1053,15 +1059,31 @@
             document.getElementById('input-account-num').value = `ACC-${suffix}`;
         }
 
+        let isBotMuted = false;
+
+        function toggleBotMute() {
+            isBotMuted = !isBotMuted;
+            const btn = document.getElementById('btn-bot-mute');
+            if (btn) {
+                btn.innerText = isBotMuted ? '🔇 Bot Voice: MUTED' : '🔊 Bot Voice: ON';
+                btn.style.borderColor = isBotMuted ? 'var(--amber)' : 'var(--border-subtle)';
+                btn.style.color = isBotMuted ? 'var(--amber)' : 'var(--text-secondary)';
+                btn.style.background = isBotMuted ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)';
+            }
+            if (isBotMuted && window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                isBotSpeaking = false;
+                document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+            }
+        }
+
         // ── Speech Synthesis with Acoustic Echo Guard ────────────────
         function speakBot(text, onComplete) {
             appendDialogue("bot", text);
-            if ('speechSynthesis' in window) {
+            if (!isBotMuted && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = true;
-                // Temporarily abort recognition so bot speech is not captured as user input
-                try { if (speechRec) speechRec.abort(); } catch (e) {}
-                document.getElementById('live-heard-text').innerText = "🤖 Bot speaking... (Mic paused to prevent echo)";
+                document.getElementById('live-heard-text').innerText = "🤖 Bot speaking... (Please wait)";
 
                 const utter = new SpeechSynthesisUtterance(text);
                 utter.rate = 1.05;
@@ -1074,21 +1096,20 @@
                     setTimeout(() => {
                         isBotSpeaking = false;
                         document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
-                        // Resume recognition cleanly
-                        try { if (isStreaming && speechRec) speechRec.start(); } catch (e) {}
                         if (onComplete) onComplete();
-                    }, 300);
+                    }, 250);
                 };
 
                 utter.onend = releaseBotSpeaking;
                 utter.onerror = releaseBotSpeaking;
 
-                // Safety fallback: auto-release after estimated duration (~320ms per word + 1200ms buffer)
-                const safeTimeout = Math.max(2500, text.split(' ').length * 320 + 1200);
+                const safeTimeout = Math.max(2500, text.split(' ').length * 320 + 1000);
                 setTimeout(releaseBotSpeaking, safeTimeout);
 
                 window.speechSynthesis.speak(utter);
             } else {
+                isBotSpeaking = false;
+                document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
                 if (onComplete) onComplete();
             }
         }
@@ -1284,6 +1305,23 @@
 
         let speechDebounceTimer = null;
         let latestSpokenText = '';
+        let lastProcessedResultIndex = 0;
+
+        function submitSpeechNow() {
+            clearTimeout(speechDebounceTimer);
+            finalizeSpeechTurn();
+        }
+
+        function finalizeSpeechTurn() {
+            const finalSpoken = latestSpokenText.trim();
+            if (finalSpoken.length > 0 && !isBotSpeaking) {
+                latestSpokenText = '';
+                const sendBtn = document.getElementById('btn-submit-speech');
+                if (sendBtn) sendBtn.style.display = 'none';
+                document.getElementById('live-heard-text').innerText = `⏳ Processing: "${finalSpoken}"...`;
+                handleVoiceInput(finalSpoken);
+            }
+        }
 
         function initSpeechRecognition() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -1293,31 +1331,30 @@
                 speechRec.interimResults = true;
                 speechRec.lang = 'en-IN';
 
+                lastProcessedResultIndex = 0;
+
                 speechRec.onresult = (e) => {
                     if (isBotSpeaking) return;
-                    let fullSpoken = '';
-                    for (let i = 0; i < e.results.length; ++i) {
-                        fullSpoken += ' ' + e.results[i][0].transcript;
+
+                    let currentTurn = '';
+                    for (let i = lastProcessedResultIndex; i < e.results.length; ++i) {
+                        currentTurn += ' ' + e.results[i][0].transcript;
                     }
-                    latestSpokenText = fullSpoken.trim();
+                    latestSpokenText = currentTurn.trim();
+
+                    const sendBtn = document.getElementById('btn-submit-speech');
                     if (latestSpokenText) {
-                        document.getElementById('live-heard-text').innerText = `🗣️ "${latestSpokenText}"`;
+                        document.getElementById('live-heard-text').innerText = `🗣️ "${latestSpokenText}" (listening... ⏳)`;
+                        if (sendBtn) sendBtn.style.display = 'inline-block';
                     }
 
-                    // ── PATIENT SPEECH BUFFER: Wait 1.5s of silence before finalizing.
-                    // Allows natural pauses and mobile phone audio playback to finish cleanly!
+                    // ── PATIENT SPEECH BUFFER: Wait 2.8 seconds of sustained silence ──
+                    // Allows caller to pause, breathe, or play phone audio clips without being cut off!
                     clearTimeout(speechDebounceTimer);
                     speechDebounceTimer = setTimeout(() => {
-                        const finalSpoken = latestSpokenText.trim();
-                        if (finalSpoken.length > 0 && !isBotSpeaking) {
-                            latestSpokenText = '';
-                            try { speechRec.abort(); } catch (err) {}
-                            setTimeout(() => {
-                                try { if (isStreaming && speechRec) speechRec.start(); } catch (err) {}
-                            }, 200);
-                            handleVoiceInput(finalSpoken);
-                        }
-                    }, 1500);
+                        lastProcessedResultIndex = e.results.length;
+                        finalizeSpeechTurn();
+                    }, 2800);
                 };
 
                 speechRec.onerror = (err) => {
@@ -1325,13 +1362,14 @@
                         console.log('SpeechRec error:', err);
                     }
                 };
+
                 speechRec.onend = () => {
                     if (isStreaming && !isBotSpeaking) {
                         setTimeout(() => {
                             try {
                                 if (isStreaming && speechRec) speechRec.start();
                             } catch (e) {}
-                        }, 200);
+                        }, 250);
                     }
                 };
 
@@ -1345,6 +1383,13 @@
             isStreaming = false;
             isBotSpeaking = false;
             dialogueStage = "IDLE";
+            lastProcessedResultIndex = 0;
+            latestSpokenText = '';
+            clearTimeout(speechDebounceTimer);
+
+            const sendBtn = document.getElementById('btn-submit-speech');
+            if (sendBtn) sendBtn.style.display = 'none';
+
             if (timerInterval) clearInterval(timerInterval);
             if (scriptNode) scriptNode.disconnect();
             if (micStream) micStream.getTracks().forEach(t => t.stop());
@@ -1517,11 +1562,11 @@
 
             // Stage 1: Confirm Account & Baseline Voice Acquisition
             if (dialogueStage === "AWAIT_CONFIRM") {
-                if (text.includes('yes') || text.includes('confirm') || text.includes('naman') || text.includes('tiwari') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account') || text.includes('hello') || text.includes('hi') || text.includes('my name') || text.includes('name is') || text.includes('i am') || text.includes('calling')) {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('naman') || text.includes('tiwari') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account') || text.includes('hello') || text.includes('hi') || text.includes('my name') || text.includes('name is') || text.includes('i am') || text.includes('calling') || text.length >= 4) {
                     dialogueStage = "AWAIT_INTENT";
                     speakBot("Voice identity synchronized. How can I assist you today? You can say 'Check balance' or 'Transfer money'.");
                 } else {
-                    speakBot("Please state your full name and confirm your account to proceed.");
+                    speakBot("Please state your name and confirm your account to proceed.");
                 }
                 return;
             }
@@ -1586,7 +1631,7 @@
 
             // Stage 4: Wire Transfer - Spoken Question 2 (Spoken Biometric Authorization Phrase)
             if (dialogueStage === "AWAIT_TRANSFER_PHRASE") {
-                if (text.includes('authorize') || text.includes('wire transfer') || text.includes('transfer') || text.includes('account') || text.includes('immediate') || text.includes('yes') || text.includes('confirm')) {
+                if (text.includes('authorize') || text.includes('wire transfer') || text.includes('transfer') || text.includes('account') || text.includes('immediate') || text.includes('yes') || text.includes('confirm') || text.includes('proceed') || text.includes('ok') || text.length >= 6) {
                     speakBot("Spoken authorization phrase validated. Analyzing multi-window acoustic frames for synthetic speech...");
                     executeVoiceWireTransfer(accNum, pendingTransferAmount);
                 } else {
