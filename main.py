@@ -23,7 +23,7 @@ if _CURRENT_DIR not in sys.path:
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, File, UploadFile, Form, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
 
@@ -33,6 +33,9 @@ app = FastAPI(
     title="Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention API",
     description="Carrier-Grade Real-Time Voice Biometric Impersonation Defense & Autonomous Banking Fraud Gate",
     version="2.0.0",
+    docs_url=None,       # Disable /docs (Swagger UI)
+    redoc_url=None,      # Disable /redoc
+    openapi_url=None,    # Disable /openapi.json
 )
 
 # Enterprise Security Headers Middleware
@@ -122,34 +125,13 @@ class SimulateRequest(BaseModel):
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
 @app.get("/", response_class=FileResponse)
-def root():
-    """Serves the interactive Voice Shield Live Monitoring SOC Dashboard directly at root."""
-    dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
-    if not os.path.isfile(dashboard_file):
-        raise HTTPException(status_code=404, detail="Dashboard UI file not found.")
-    return FileResponse(dashboard_file)
-
-
 @app.get("/dashboard", response_class=FileResponse)
-def get_dashboard():
-    """Serves the interactive Voice Shield Live Monitoring SOC Dashboard."""
+def serve_dashboard():
+    """Exclusively serves the Voice Shield Live Monitoring SOC Dashboard. Zero external docs or status pages."""
     dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
     if not os.path.isfile(dashboard_file):
         raise HTTPException(status_code=404, detail="Dashboard UI file not found.")
     return FileResponse(dashboard_file)
-
-
-@app.get("/api/v1/health")
-def health_check():
-    """Health check endpoint for cloud load balancers and Render."""
-    return {
-        "service": "Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention Engine",
-        "status": "ONLINE",
-        "version": "2.0.0",
-        "target_accent": "Indian English & Multi-lingual (IndieFake Fine-Tuned AASIST)",
-        "dashboard_ui": "/dashboard",
-        "documentation": "/docs",
-    }
 
 
 # -------------------------------------------------------------
