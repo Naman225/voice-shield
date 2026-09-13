@@ -344,6 +344,11 @@ def execute_wire_transfer(req: BankTransferRequest):
         )
 
     if session.current_tier == "AMBER":
+        # Always re-check on every transfer attempt, even after an earlier
+        # OTP verification this call — a one-time step-up should not become
+        # a standing bypass for moving money. Only the passive/background
+        # conversation flow skips repeat interruptions (see service.py);
+        # an actual funds-movement request always re-validates current risk.
         otp_code = f"{random.randint(100000, 999999)}"
         _ACTIVE_OTPS[req.call_id] = otp_code
         print(f"\n[STEP-UP OTP DISPATCH] 📲 Sent OTP {otp_code} for call session {req.call_id} (Account: {req.account_number})")
@@ -408,10 +413,25 @@ def verify_otp(call_id: str, req: VerifyOTPRequest):
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid OTP code. Transaction remains locked.")
 
-    # Unfreeze fraud gate and reset tier to GREEN
+    # Unfreeze fraud gate and reset tier to GREEN.
+    # IMPORTANT: session.running_risk_pct is just a display value — the real
+    # state lives in session.risk_engine.running_risk (the EMA accumulator).
+    # Earlier code only reset the display value, so the very next audio
+    # chunk would recompute risk as 0.7×(stale elevated EMA)+0.3×(new
+    # score) and snap straight back into AMBER/RED within a second or two —
+    # which is why a verified caller kept getting re-challenged, and why a
+    # genuinely calm voice right after an AMBER/RED episode still scored
+    # high. Resetting the engine itself (same call the RESET demo button
+    # already correctly uses) fixes both.
+    session.risk_engine.reset()
+    session.buffer.reset()
     session.current_tier = "GREEN"
     session.running_risk_pct = 5.0
     session.is_terminated = False
+    # One-time step-up: don't challenge again this call. If the voice really
+    # is an ongoing clone, the EMA will climb back through AMBER into RED on
+    # its own and get frozen automatically — no repeated OTP prompts needed.
+    session.step_up_used = True
     session.fraud_gate.manual_override_unfreeze(f"OTP-VERIFIED-{submitted_otp}")
     _ACTIVE_OTPS.pop(call_id, None)
 
@@ -424,6 +444,31 @@ def verify_otp(call_id: str, req: VerifyOTPRequest):
         "call_id": call_id,
         "message": "Step-up 2FA successful. Fraud gate unlocked for wire transfer.",
         "fraud_gate": session.fraud_gate.get_status()
+    }
+
+
+@app.post("/api/v1/call/cancel-otp/{call_id}")
+def cancel_otp(call_id: str):
+    """
+    Caller or operator cancels step-up OTP verification (unable to provide OTP).
+    Cuts the call session gracefully without freezing or locking the account.
+    """
+    session = session_manager.get_session(call_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Call session '{call_id}' not found.")
+
+    session.is_terminated = True
+    _ACTIVE_OTPS.pop(call_id, None)
+
+    print(f"\n[CALL CANCELLED] ℹ️ Session {call_id} terminated: OTP could not be provided.")
+
+    return {
+        "status": "CALL_CANCELLED_NO_OTP",
+        "call_id": call_id,
+        "account_number": session.account_number,
+        "message": "OTP cannot be provided. Call terminated.",
+        "call_action": "CUT_CALL",
+        "voice_prompt": "OTP cannot be provided. Terminating call."
     }
 
 
@@ -500,10 +545,12 @@ def simulate_voice_risk(call_id: str, req: SimulateRequest):
     elif mode == "RESET":
         # Reset to clean GREEN baseline
         session.risk_engine.reset()
+        session.buffer.reset()
         session.running_risk_pct = 5.0
         session.current_tier = "GREEN"
         session.latest_frame_score = 0.05
         session.is_terminated = False
+        session.step_up_used = False
         session.fraud_gate.reset()
         gate_status = session.fraud_gate.get_status()
         return {
@@ -552,6 +599,9 @@ def inquire_account_details(req: AccountInquiryRequest):
         )
 
     if session.current_tier == "AMBER":
+        # Same reasoning as /bank/transfer above — always re-check for a
+        # confidential-data disclosure, regardless of an earlier one-time
+        # step-up this call.
         return JSONResponse(
             status_code=202,
             content={
@@ -603,8 +653,13 @@ def verify_security_question(call_id: str, req: VerifySecurityQuestionRequest):
         )
 
     session.fraud_gate.manual_override_unfreeze("SECURITY-QUESTION-VERIFIED")
+    session.risk_engine.reset()
+    session.buffer.reset()
     session.current_tier = "GREEN"
     session.running_risk_pct = 5.0
+    session.is_terminated = False
+    # One-time step-up: don't challenge again this call (see verify-otp).
+    session.step_up_used = True
     return {
         "status": "CHALLENGE_PASSED",
         "call_action": "CONTINUE",

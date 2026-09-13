@@ -106,6 +106,16 @@ class ActiveCallSession:
         self.current_tier           = "GREEN"
         self.is_terminated          = False
 
+        # One-time step-up 2FA gate. Set True the moment the caller passes
+        # an OTP / security-question challenge for THIS call. A continuing
+        # AI/cloned voice will keep pushing the EMA back up into AMBER (and
+        # eventually RED) — once step_up_used is True we do not interrupt
+        # the call with another challenge; we just let the risk score keep
+        # accumulating naturally until it crosses into RED and the normal
+        # freeze logic below takes over. This stops the "verify → dip →
+        # climb back into AMBER → verify again" loop for a sustained clone.
+        self.step_up_used = False
+
     def process_audio_chunk(
         self,
         pcm_samples:       np.ndarray,
@@ -148,32 +158,34 @@ class ActiveCallSession:
         if sample_rate != 16000:
             mono_samples = self.normalizer.resample(mono_samples, orig_sr=sample_rate)
 
-        # 2. Push into sliding buffer
-        self.buffer.push_samples(mono_samples)
+        # 2. Push active speech into sliding buffer (skip near-silent chunks so pauses don't dilute buffer)
+        chunk_rms = float(np.sqrt(np.mean(mono_samples.astype(np.float64) ** 2)))
+        if chunk_rms >= 0.002:
+            self.buffer.push_samples(mono_samples)
 
-        # 3. Run AASIST inference once at least 1.0 s (16,000 samples) or full window is filled
-        if self.buffer.is_window_ready() or len(self.buffer._buffer) >= 16000:
+        # 3. Run AASIST inference once buffer contains at least 1.0s (16,000 samples)
+        #    or a full window (64,600 samples). This allows short phrases like "transfer 50000"
+        #    to be immediately scored instead of waiting 4+ seconds or falling silent.
+        if len(self.buffer._buffer) >= 16000 or self.buffer.is_window_ready():
             window_audio = self.buffer.get_latest_window()
 
-            # VAD Gate: If the audio window is mostly silence / ambient noise,
-            # skip inference entirely and inject a bonafide (0.0) score.
-            # This prevents false deepfake escalation when the caller is
-            # pausing, listening, or silent between utterances.
+            # VAD Gate: Check window energy.
+            # If silence / ambient noise, skip EMA update so pauses do NOT decay risk score.
             window_rms = float(np.sqrt(np.mean(window_audio.astype(np.float64) ** 2)))
             if window_rms < 0.002:
-                # Near-silent window — treat as authentic (no voice = no spoof)
-                self.latest_frame_score = 0.0
+                # Near-silent window — hold current risk (silence is absence of speech, not evidence of human)
+                pass
             elif is_simulated_clone:
-                # Demo / simulation mode: bypass AASIST and inject a realistic
-                # synthetic voice clone score to demonstrate RED detection.
-                # Uses a high but not instant score so the EMA ramp-up is visible.
+                # Demo / simulation mode: inject synthetic voice clone score
                 self.latest_frame_score = 0.92
+                self.running_risk_pct, self.current_tier = self.risk_engine.update_risk(
+                    self.latest_frame_score
+                )
             else:
                 self.latest_frame_score = self.scorer.score_frame(window_audio)
-
-            self.running_risk_pct, self.current_tier = self.risk_engine.update_risk(
-                self.latest_frame_score
-            )
+                self.running_risk_pct, self.current_tier = self.risk_engine.update_risk(
+                    self.latest_frame_score
+                )
 
         # 4. Evaluate Fraud Gate
         gate_status = self.fraud_gate.evaluate_gate(self.running_risk_pct, self.current_tier)
@@ -193,10 +205,19 @@ class ActiveCallSession:
             call_action = "CUT_CALL"
             voice_prompt = "Unauthorized user access detected: synthetic voice clone identified. Terminating call immediately."
 
-        elif self.current_tier == "AMBER":
+        elif self.current_tier == "AMBER" and not self.step_up_used:
+            # First time this call crosses into AMBER: ask for step-up 2FA.
             call_action = "CHALLENGE_AUTHENTICATION"
             security_q = acc["security_question"]
             voice_prompt = f"Caution: Elevated voice anomaly detected. Please verify your identity: {security_q}"
+
+        elif self.current_tier == "AMBER" and self.step_up_used:
+            # Already verified once this call — do not re-challenge. Stay
+            # silent (call_action CONTINUE) and let the EMA keep climbing;
+            # a sustained clone will cross into RED on its own and get
+            # frozen by the block above on a later chunk.
+            call_action = "CONTINUE"
+            voice_prompt = None
 
         return {
             "call_id":            self.call_id,

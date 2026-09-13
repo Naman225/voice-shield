@@ -960,8 +960,8 @@
             </div>
 
             <input type="text" id="input-verify-otp" class="modal-input" placeholder="Enter 6-digit OTP code" value="847291">
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeOtpSentModal()">Cancel</button>
+            <div class="modal-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                <button class="btn-secondary" style="border: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.82rem; padding: 0.55rem 0.9rem;" onclick="cancelOtpCall()">Cancel (Cannot Provide OTP)</button>
                 <button class="btn-primary" style="background: var(--amber); color: black;" onclick="submitVerifyOtpModal()">Verify OTP & Authorize</button>
             </div>
         </div>
@@ -979,6 +979,9 @@
                 • <strong>Impersonation Risk:</strong> <span id="frozen-risk-disp" style="color: var(--red); font-weight: 800;">82.4%</span><br>
                 • <strong>Status:</strong> Active telephone call terminated & all bank transactions locked.<br>
                 • <strong>Evidence Hash:</strong> <span id="frozen-hash-disp" class="hash-code">SHA256-4a8dde81c989a...</span>
+                <div id="frozen-alert-banner" style="margin-top: 0.85rem; padding: 0.6rem 0.85rem; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); border-radius: var(--radius-sm); font-size: 0.78rem; color: #fca5a5; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🛡️</span> <div><strong>SECURITY ALERT DISPATCHED:</strong> Incident report broadcast to Fraud Operations & Bank Security Center.</div>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="closeFrozenModal()">Dismiss</button>
@@ -1031,6 +1034,18 @@
         let pendingAction = null; // "BALANCE" or "TRANSFER"
         let pendingTransferAmount = 50000;
 
+        // One-time step-up 2FA gate (mirrors backend session.step_up_used).
+        // Once true for this call, ambient AMBER telemetry no longer pops a
+        // fresh OTP/security-question modal — a sustained clone just keeps
+        // accumulating risk in the background until it hits RED and is cut.
+        let stepUpVerifiedOnce = false;
+        // Remembers what the caller was doing right before a challenge
+        // interrupted them, so we can resume there instead of resetting
+        // to a generic "anything else I can help you with" prompt.
+        let preChallengeStage = null;
+        let preChallengePrompt = null;
+        let lastBotText = "";
+
         // Phone-to-Account Registry Map
         const PHONE_ACCOUNT_MAP = {
             "+91 98765 43210": "ACC-550189",
@@ -1079,7 +1094,19 @@
 
         // ── Speech Synthesis with Acoustic Echo Guard ────────────────
         function speakBot(text, onComplete) {
+            lastBotText = text;
             appendDialogue("bot", text);
+
+            // Hard-stop the recognizer while the bot talks. Merely ignoring
+            // onresult (old behaviour) still lets the mic transcribe the
+            // bot's own voice out of the speakers in the background; that
+            // leaked transcript then gets flushed as "user speech" the
+            // instant the bot stops, which is what caused replies to echo
+            // the bot's own greeting back at itself.
+            if (speechRec) {
+                try { speechRec.stop(); } catch (e) {}
+            }
+
             if (!isBotMuted && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = true;
@@ -1096,8 +1123,15 @@
                     setTimeout(() => {
                         isBotSpeaking = false;
                         document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                        // Fresh recognizer session — fresh result indices, so
+                        // nothing from the bot's own utterance can bleed in.
+                        lastProcessedResultIndex = 0;
+                        latestSpokenText = '';
+                        if (isStreaming && speechRec) {
+                            try { speechRec.start(); } catch (e) {}
+                        }
                         if (onComplete) onComplete();
-                    }, 250);
+                    }, 400); // brief buffer so speaker tail-off isn't caught by the mic
                 };
 
                 utter.onend = releaseBotSpeaking;
@@ -1110,6 +1144,11 @@
             } else {
                 isBotSpeaking = false;
                 document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                lastProcessedResultIndex = 0;
+                latestSpokenText = '';
+                if (isStreaming && speechRec) {
+                    try { speechRec.start(); } catch (e) {}
+                }
                 if (onComplete) onComplete();
             }
         }
@@ -1226,6 +1265,9 @@
 
                 activeCallId = `CALL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
                 document.getElementById('disp-call-id').innerText = activeCallId;
+                stepUpVerifiedOnce = false;
+                preChallengeStage = null;
+                preChallengePrompt = null;
 
                 const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = `${wsProto}//${window.location.host}/ws/call/${activeCallId}?account=${encodeURIComponent(accNum)}&caller_id=${encodeURIComponent(callerPhone)}`;
@@ -1312,15 +1354,25 @@
             finalizeSpeechTurn();
         }
 
-        function finalizeSpeechTurn() {
+        function finalizeSpeechTurn(retries) {
+            retries = retries || 0;
             const finalSpoken = latestSpokenText.trim();
-            if (finalSpoken.length > 0 && !isBotSpeaking) {
-                latestSpokenText = '';
-                const sendBtn = document.getElementById('btn-submit-speech');
-                if (sendBtn) sendBtn.style.display = 'none';
-                document.getElementById('live-heard-text').innerText = `⏳ Processing: "${finalSpoken}"...`;
-                handleVoiceInput(finalSpoken);
+            if (finalSpoken.length === 0) return;
+
+            if (isBotSpeaking) {
+                // Don't silently drop it — the bot is mid-sentence, so wait
+                // a beat and try again instead of the click doing nothing.
+                if (retries < 15) {
+                    setTimeout(() => finalizeSpeechTurn(retries + 1), 300);
+                }
+                return;
             }
+
+            latestSpokenText = '';
+            const sendBtn = document.getElementById('btn-submit-speech');
+            if (sendBtn) sendBtn.style.display = 'none';
+            document.getElementById('live-heard-text').innerText = `⏳ Processing: "${finalSpoken}"...`;
+            handleVoiceInput(finalSpoken);
         }
 
         function initSpeechRecognition() {
@@ -1334,7 +1386,13 @@
                 lastProcessedResultIndex = 0;
 
                 speechRec.onresult = (e) => {
-                    if (isBotSpeaking) return;
+                    if (isBotSpeaking) {
+                        // Defense-in-depth: even though we stop() the recognizer
+                        // while the bot talks, don't let any straggler result
+                        // carry forward into the next turn's transcript.
+                        lastProcessedResultIndex = e.results.length;
+                        return;
+                    }
 
                     let currentTurn = '';
                     for (let i = lastProcessedResultIndex; i < e.results.length; ++i) {
@@ -1361,6 +1419,22 @@
                     if (err.error !== 'no-speech') {
                         console.log('SpeechRec error:', err);
                     }
+                };
+
+                // CRITICAL: every time the recognizer actually starts a new
+                // session (initial start, restart after the bot spoke, or
+                // the browser's own auto-restart below), the browser resets
+                // e.result indices back to 0 for that session. If we don't
+                // also reset lastProcessedResultIndex here, it keeps the
+                // stale count from the previous session, and the very next
+                // onresult loop (`for i = lastProcessedResultIndex...`)
+                // silently skips every result until the new session
+                // happens to accumulate more results than that stale
+                // number — which is exactly why speech was randomly
+                // "not heard": it depended on how many results piled up
+                // before vs after a restart, not on what was actually said.
+                speechRec.onstart = () => {
+                    lastProcessedResultIndex = 0;
                 };
 
                 speechRec.onend = () => {
@@ -1522,6 +1596,9 @@
 
             appendDialogue('bot', '✅ Acoustic threat cleared. Voice identity re-verified as authentic human. Session resumed at GREEN baseline.');
             dialogueStage = 'AWAIT_INTENT';
+            stepUpVerifiedOnce = false;
+            preChallengeStage = null;
+            preChallengePrompt = null;
         }
 
         // Helper to extract amounts from natural speech
@@ -1642,6 +1719,10 @@
 
             // Stage 5: Awaiting Security Question Answer (Step-Up Challenge on Caution/Amber)
             if (dialogueStage === "AWAIT_SECURITY_Q") {
+                if (text.includes('cancel') || text.includes('no otp') || text.includes('cannot provide') || text.includes("don't have") || text.includes('refuse')) {
+                    cancelOtpCall();
+                    return;
+                }
                 await verifySecurityAnswerByVoice(text, accNum);
                 return;
             }
@@ -1730,13 +1811,21 @@
                 updateGauge(5.0, 'GREEN');
                 updateFraudGateUI({ is_frozen: false, lock_reason: 'Security Check Passed' }, 'GREEN', 5.0);
 
+                stepUpVerifiedOnce = true;
                 if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
                 else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
-                else {
+                else if (preChallengeStage && preChallengeStage !== "AWAIT_SECURITY_Q" && preChallengeStage !== "IDLE") {
+                    // Resume exactly where the AMBER challenge interrupted us,
+                    // instead of resetting to a generic greeting.
+                    dialogueStage = preChallengeStage;
+                    speakBot(`Identity verified. Continuing — ${preChallengePrompt}`);
+                } else {
                     dialogueStage = 'AWAIT_FAREWELL';
                     speakBot('Identity verified. Is there anything else I can help you with?');
                 }
                 pendingAction = null;
+                preChallengeStage = null;
+                preChallengePrompt = null;
             } else {
                 openFrozenModal(accNum, "92.0%", "SHA256-4a8dde81c989a");
                 speakBot("Security verification failed. Unauthorized access detected. Terminating call immediately.");
@@ -1773,9 +1862,21 @@
                 return;
             }
 
-            // 2. AMBER Caution -> Trigger Challenge
+            // 2. AMBER Caution -> Trigger Challenge (only ONCE per call)
             if (data.call_action === "CHALLENGE_AUTHENTICATION" || currentTier === "AMBER") {
+                if (stepUpVerifiedOnce) {
+                    // Already stepped-up once this call — don't interrupt again.
+                    // Let the risk score keep accumulating silently; if this
+                    // really is a sustained clone it will cross into RED on
+                    // its own and get cut by the block above. No new modal,
+                    // no dialogueStage change — the ongoing conversation
+                    // keeps running untouched.
+                    updateFraudGateUI(gate, "AMBER", latestRisk);
+                    return;
+                }
                 if (dialogueStage !== "AWAIT_SECURITY_Q") {
+                    preChallengeStage = dialogueStage;
+                    preChallengePrompt = lastBotText;
                     dialogueStage = "AWAIT_SECURITY_Q";
                     fetch(`/api/v1/call/send-otp/${activeCallId}`, { method: 'POST' })
                         .then(r => r.json())
@@ -1876,6 +1977,19 @@
             document.getElementById('modal-otp-sent').style.display = 'none';
         }
 
+        async function cancelOtpCall() {
+            closeOtpSentModal();
+            try {
+                if (activeCallId) {
+                    await fetch(`/api/v1/call/cancel-otp/${activeCallId}`, { method: 'POST' }).catch(() => {});
+                }
+            } catch (err) {
+                console.error("Error notifying server of OTP cancel:", err);
+            }
+            speakBot("OTP cannot be provided. Terminating call.");
+            setTimeout(() => stopLiveStream('CALL_CANCELLED_NO_OTP'), 2500);
+        }
+
         async function submitVerifyOtpModal() {
             const otp = document.getElementById('input-verify-otp').value.trim();
             if (!otp) return;
@@ -1893,14 +2007,22 @@
                 updateGauge(5.0, 'GREEN');
                 updateFraudGateUI({ is_frozen: false, lock_reason: '2FA OTP Verified' }, 'GREEN', 5.0);
 
+                stepUpVerifiedOnce = true;
                 const accNum = document.getElementById('input-account-num').value.trim();
                 if (pendingAction === "BALANCE") executeVoiceBalanceInquiry(accNum);
                 else if (pendingAction === "TRANSFER") executeVoiceWireTransfer(accNum, pendingTransferAmount);
-                else {
+                else if (preChallengeStage && preChallengeStage !== "AWAIT_SECURITY_Q" && preChallengeStage !== "IDLE") {
+                    // Resume exactly where the AMBER challenge interrupted us,
+                    // instead of resetting to a generic greeting.
+                    dialogueStage = preChallengeStage;
+                    speakBot(`Identity verified. Continuing — ${preChallengePrompt}`);
+                } else {
                     dialogueStage = 'AWAIT_FAREWELL';
                     speakBot('Identity verified. Is there anything else I can help you with?');
                 }
                 pendingAction = null;
+                preChallengeStage = null;
+                preChallengePrompt = null;
             } else {
                 const errData = await res.json().catch(() => ({}));
                 alert(`❌ ${errData.detail || "Invalid OTP code. Transaction remains locked."}`);
