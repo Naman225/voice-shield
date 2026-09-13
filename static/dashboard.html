@@ -2518,7 +2518,13 @@
             drawTimeline();
         }
         window.addEventListener('resize', resizeCanvases);
-        window.addEventListener('DOMContentLoaded', resizeCanvases);
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeCanvases();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('tab') === 'live') switchTab('tab-live', document.getElementById('tab-btn-live'));
+            else if (params.get('tab') === 'forensics') switchTab('tab-forensics', document.getElementById('tab-btn-forensics'));
+            else if (params.get('tab') === 'audit') switchTab('tab-audit', document.getElementById('tab-btn-audit'));
+        });
     </script>
 </body>
 </html>
