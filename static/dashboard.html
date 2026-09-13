@@ -1059,10 +1059,12 @@
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = true;
+                // Temporarily abort recognition so bot speech is not captured as user input
+                try { if (speechRec) speechRec.abort(); } catch (e) {}
                 document.getElementById('live-heard-text').innerText = "🤖 Bot speaking... (Mic paused to prevent echo)";
 
                 const utter = new SpeechSynthesisUtterance(text);
-                utter.rate = 1.0;
+                utter.rate = 1.05;
                 utter.pitch = 1.0;
 
                 let done = false;
@@ -1072,15 +1074,17 @@
                     setTimeout(() => {
                         isBotSpeaking = false;
                         document.getElementById('live-heard-text').innerText = "🎤 Listening... (Speak or play audio)";
+                        // Resume recognition cleanly
+                        try { if (isStreaming && speechRec) speechRec.start(); } catch (e) {}
                         if (onComplete) onComplete();
-                    }, 250);
+                    }, 300);
                 };
 
                 utter.onend = releaseBotSpeaking;
                 utter.onerror = releaseBotSpeaking;
 
-                // Safety fallback: auto-release after speech estimated duration (max 5.5s)
-                const safeTimeout = Math.min(5500, Math.max(1800, text.split(' ').length * 350 + 500));
+                // Safety fallback: auto-release after estimated duration (~320ms per word + 1200ms buffer)
+                const safeTimeout = Math.max(2500, text.split(' ').length * 320 + 1200);
                 setTimeout(releaseBotSpeaking, safeTimeout);
 
                 window.speechSynthesis.speak(utter);
@@ -1188,8 +1192,15 @@
             const callerPhone = document.getElementById('input-caller-line').value.trim();
 
             try {
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                micStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    },
+                    video: false
+                });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioCtx.createMediaStreamSource(micStream);
 
                 activeCallId = `CALL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -1210,9 +1221,9 @@
                     document.getElementById('mic-text').innerText = 'End Live Call';
                     document.getElementById('ivr-status-pill').innerText = 'In Call';
 
-                    // Welcome speech verification
+                    // Concise welcome speech prompt
                     dialogueStage = "AWAIT_CONFIRM";
-                    speakBot(`Welcome to Secure Voice Banking. I see you are calling from ${callerPhone}, linked to account ${accNum}. For voice biometric verification, please state your full name and confirm your account.`);
+                    speakBot("Welcome to Secure Voice Banking. Please state your full name and confirm your account.");
                 };
 
                 ws.onmessage = (event) => {
@@ -1234,20 +1245,22 @@
                     }
 
                     const channelData = e.inputBuffer.getChannelData(0);
-                    // ── SILENCE GATE: Only drop true room silence (RMS < 0.002).
+                    // ── SILENCE GATE: Only drop true room silence (RMS < 0.001).
                     // Allows mobile phone speakers and conversational voices to pass into AASIST!
                     let sumSq = 0;
                     for (let i = 0; i < channelData.length; i++) sumSq += channelData[i] * channelData[i];
                     const rms = Math.sqrt(sumSq / channelData.length);
-                    if (rms < 0.002) return;
+                    if (rms < 0.001) return;
 
                     for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
-                    if (pcmBuffer.length >= SAMPLES_PER_CHUNK) {
-                        const chunk = pcmBuffer.splice(0, SAMPLES_PER_CHUNK);
+                    // Send 500ms chunks based on actual hardware audioCtx sample rate
+                    const chunkSize = audioCtx ? Math.round(audioCtx.sampleRate * 0.5) : 8000;
+                    if (pcmBuffer.length >= chunkSize) {
+                        const chunk = pcmBuffer.splice(0, chunkSize);
                         ws.send(JSON.stringify({
                             samples: chunk,
-                            sample_rate: 16000,
+                            sample_rate: audioCtx ? audioCtx.sampleRate : 16000,
                             account_number: accNum,
                             caller_id: callerPhone
                         }));
@@ -1256,17 +1269,21 @@
                 };
 
                 source.connect(scriptNode);
-                scriptNode.connect(audioCtx.destination);
+                // Zero-gain routing prevents laptop speaker feedback while keeping ScriptProcessor alive
+                const muteGain = audioCtx.createGain();
+                muteGain.gain.value = 0;
+                scriptNode.connect(muteGain);
+                muteGain.connect(audioCtx.destination);
 
                 initSpeechRecognition();
 
             } catch (err) {
-                alert(`Microphone access error: ${err.message}\nPlease open http://localhost:8000.`);
+                alert(`Microphone access error: ${err.message}\nPlease allow microphone permissions in browser.`);
             }
         }
 
         let speechDebounceTimer = null;
-        let speechTranscriptBuffer = '';
+        let latestSpokenText = '';
 
         function initSpeechRecognition() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -1278,39 +1295,43 @@
 
                 speechRec.onresult = (e) => {
                     if (isBotSpeaking) return;
-                    let interim = '';
-                    for (let i = e.resultIndex; i < e.results.length; ++i) {
-                        if (e.results[i].isFinal) {
-                            speechTranscriptBuffer += ' ' + e.results[i][0].transcript;
-                        } else {
-                            interim += e.results[i][0].transcript;
-                        }
+                    let fullSpoken = '';
+                    for (let i = 0; i < e.results.length; ++i) {
+                        fullSpoken += ' ' + e.results[i][0].transcript;
                     }
-                    const liveDisplay = (speechTranscriptBuffer + ' ' + interim).trim();
-                    if (liveDisplay) {
-                        document.getElementById('live-heard-text').innerText = `🗣️ "${liveDisplay}"`;
+                    latestSpokenText = fullSpoken.trim();
+                    if (latestSpokenText) {
+                        document.getElementById('live-heard-text').innerText = `🗣️ "${latestSpokenText}"`;
                     }
 
-                    // ── PATIENT SPEECH BUFFER: Wait 1.3 seconds of silence before finalizing.
-                    // This gives the user / phone speaker time to finish their sentence naturally!
+                    // ── PATIENT SPEECH BUFFER: Wait 1.5s of silence before finalizing.
+                    // Allows natural pauses and mobile phone audio playback to finish cleanly!
                     clearTimeout(speechDebounceTimer);
                     speechDebounceTimer = setTimeout(() => {
-                        const finalSpoken = speechTranscriptBuffer.trim();
+                        const finalSpoken = latestSpokenText.trim();
                         if (finalSpoken.length > 0 && !isBotSpeaking) {
-                            speechTranscriptBuffer = '';
+                            latestSpokenText = '';
+                            try { speechRec.abort(); } catch (err) {}
+                            setTimeout(() => {
+                                try { if (isStreaming && speechRec) speechRec.start(); } catch (err) {}
+                            }, 200);
                             handleVoiceInput(finalSpoken);
                         }
-                    }, 1300);
+                    }, 1500);
                 };
 
-                speechRec.onerror = (err) => console.log('SpeechRec error:', err);
+                speechRec.onerror = (err) => {
+                    if (err.error !== 'no-speech') {
+                        console.log('SpeechRec error:', err);
+                    }
+                };
                 speechRec.onend = () => {
-                    if (isStreaming) {
+                    if (isStreaming && !isBotSpeaking) {
                         setTimeout(() => {
                             try {
                                 if (isStreaming && speechRec) speechRec.start();
                             } catch (e) {}
-                        }, 150);
+                        }, 200);
                     }
                 };
 
@@ -1496,22 +1517,30 @@
 
             // Stage 1: Confirm Account & Baseline Voice Acquisition
             if (dialogueStage === "AWAIT_CONFIRM") {
-                if (text.includes('yes') || text.includes('confirm') || text.includes('naman') || text.includes('tiwari') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account')) {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('naman') || text.includes('tiwari') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account') || text.includes('hello') || text.includes('hi') || text.includes('my name') || text.includes('name is') || text.includes('i am') || text.includes('calling')) {
                     dialogueStage = "AWAIT_INTENT";
-                    speakBot("Voice identity synchronized. How can I assist you today? You can say 'Check account balance' or 'Transfer money'.");
+                    speakBot("Voice identity synchronized. How can I assist you today? You can say 'Check balance' or 'Transfer money'.");
                 } else {
-                    speakBot("Please state your full name and say 'I confirm this is my account' to proceed.");
+                    speakBot("Please state your full name and confirm your account to proceed.");
                 }
                 return;
             }
 
             // Stage 2: Intent Detection
             if (dialogueStage === "AWAIT_INTENT") {
-                if (text.includes('balance') || text.includes('money') || text.includes('details') || text.includes('statement')) {
+                if (text.includes('balance') || text.includes('check') || text.includes('statement') || text.includes('kitna') || text.includes('paisa')) {
                     executeVoiceBalanceInquiry(accNum);
-                } else if (text.includes('transfer') || text.includes('send') || text.includes('wire') || text.includes('pay')) {
-                    dialogueStage = 'AWAIT_TRANSFER_AMOUNT';
-                    speakBot('Sure, I can help you with a wire transfer. How much would you like to transfer? Please state the amount.');
+                } else if (text.includes('transfer') || text.includes('send') || text.includes('wire') || text.includes('pay') || text.includes('bhejo')) {
+                    const amount = extractAmountFromSpeech(rawText);
+                    if (rawText.match(/\d+/) || (amount && amount !== 50000)) {
+                        document.getElementById('input-transfer-amount').value = amount;
+                        pendingTransferAmount = amount;
+                        dialogueStage = 'AWAIT_TRANSFER_CONFIRM';
+                        speakBot(`You would like to transfer ₹${amount.toLocaleString('en-IN')} to ABC Corp Limited. Is that correct? Please say yes to confirm or no to change the amount.`);
+                    } else {
+                        dialogueStage = 'AWAIT_TRANSFER_AMOUNT';
+                        speakBot('Sure, I can help you with a wire transfer. How much would you like to transfer? Please state the amount.');
+                    }
                 } else {
                     speakBot("I can help you check your account balance or process a wire transfer. Which one would you like?");
                 }
@@ -1530,7 +1559,7 @@
 
             // Stage: Transfer Amount Confirmation
             if (dialogueStage === "AWAIT_TRANSFER_CONFIRM") {
-                if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('proceed')) {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('proceed') || text.includes('ok') || text.includes('sure')) {
                     dialogueStage = 'AWAIT_TRANSFER_PURPOSE';
                     speakBot(`Amount confirmed: ₹${pendingTransferAmount.toLocaleString('en-IN')} to ABC Corp Limited. For regulatory compliance and voice biometric verification, please state the purpose of this transaction.`);
                 } else if (text.includes('no') || text.includes('change') || text.includes('nahi') || text.includes('wrong') || text.includes('different')) {
@@ -1583,7 +1612,6 @@
             const data = await res.json();
 
             if (res.status === 200) {
-                speakBot(`Your current available balance in account ${accNum} is twelve lakh forty thousand five hundred rupees.`);
                 showResultCard("ℹ️ Account Balance Verified", `
                     <strong>Account:</strong> ${data.account_number}<br>
                     <strong>Owner:</strong> ${data.owner}<br>
@@ -1591,7 +1619,7 @@
                     <strong>Voice Status:</strong> ${data.voice_integrity}
                 `);
                 dialogueStage = 'AWAIT_FAREWELL';
-                speakBot('Is there anything else I can help you with today?');
+                speakBot(`Your current available balance in account ${accNum} is twelve lakh forty thousand five hundred rupees. Is there anything else I can help you with today?`);
             } else if (res.status === 202) {
                 pendingAction = "BALANCE";
                 dialogueStage = "AWAIT_SECURITY_Q";
@@ -1618,7 +1646,6 @@
             const data = await res.json();
 
             if (res.status === 200) {
-                speakBot(`Processing wire transfer of ₹${amount.toLocaleString('en-IN')} to ABC Corp Ltd. Authorized successfully.`);
                 showResultCard("💸 Wire Transfer Authorized", `
                     <strong>Status:</strong> <span style="color: var(--green);">TRANSFER_SUCCESSFUL</span><br>
                     <strong>Receipt ID:</strong> ${data.receipt_id}<br>
@@ -1627,7 +1654,7 @@
                     <strong>Voice Integrity:</strong> ${data.voice_integrity_score}
                 `);
                 dialogueStage = 'AWAIT_FAREWELL';
-                speakBot('Is there anything else I can help you with today?');
+                speakBot(`Wire transfer of ₹${amount.toLocaleString('en-IN')} to ABC Corp Limited has been authorized successfully. Is there anything else I can help you with today?`);
             } else if (res.status === 202) {
                 pendingAction = "TRANSFER";
                 dialogueStage = "AWAIT_SECURITY_Q";

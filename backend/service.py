@@ -151,8 +151,8 @@ class ActiveCallSession:
         # 2. Push into sliding buffer
         self.buffer.push_samples(mono_samples)
 
-        # 3. Run AASIST inference once 4.04 s window is filled
-        if self.buffer.is_window_ready():
+        # 3. Run AASIST inference once at least 1.0 s (16,000 samples) or full window is filled
+        if self.buffer.is_window_ready() or len(self.buffer._buffer) >= 16000:
             window_audio = self.buffer.get_latest_window()
 
             # VAD Gate: If the audio window is mostly silence / ambient noise,
@@ -160,7 +160,7 @@ class ActiveCallSession:
             # This prevents false deepfake escalation when the caller is
             # pausing, listening, or silent between utterances.
             window_rms = float(np.sqrt(np.mean(window_audio.astype(np.float64) ** 2)))
-            if window_rms < 0.003:
+            if window_rms < 0.002:
                 # Near-silent window — treat as authentic (no voice = no spoof)
                 self.latest_frame_score = 0.0
             elif is_simulated_clone:
