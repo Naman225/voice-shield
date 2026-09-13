@@ -69,9 +69,8 @@ session_manager = CallSessionManager()
 _ACTIVE_OTPS = {}
 
 
-# -------------------------------------------------------------
 # PYDANTIC SCHEMAS
-# -------------------------------------------------------------
+
 class StartCallRequest(BaseModel):
     call_id: Optional[str] = Field(default_factory=lambda: f"CALL-{uuid.uuid4().hex[:8].upper()}")
     caller_id: str = Field(default="Executive Desk #8941", description="Caller phone number or identifier")
