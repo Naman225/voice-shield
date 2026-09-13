@@ -1170,73 +1170,6 @@
             document.getElementById(tabId).classList.add('active');
         }
 
-        // ── Admin & Security Hub ─────────────────────────────────────
-        async function loadAdminAccounts() {
-            document.getElementById('admin-accounts-loading').style.display = 'block';
-            document.getElementById('admin-accounts-table').style.display = 'none';
-            try {
-                const res = await fetch('/api/v1/admin/accounts');
-                const data = await res.json();
-                const tbody = document.getElementById('admin-accounts-tbody');
-                tbody.innerHTML = '';
-                const accounts = data.accounts || {};
-                for (const [accId, acc] of Object.entries(accounts)) {
-                    const isLocked = acc.is_locked;
-                    const statusColor = isLocked ? 'var(--red)' : 'var(--green)';
-                    const statusText = isLocked ? '🔴 LOCKED' : '🟢 ACTIVE';
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td style="font-family: var(--font-mono); font-size:0.82rem;">${accId}</td>
-                        <td>${acc.owner || '-'}</td>
-                        <td style="font-family: var(--font-mono);">₹ ${(acc.balance || 0).toLocaleString('en-IN')}</td>
-                        <td style="color: ${statusColor}; font-weight: 700;">${statusText}</td>
-                        <td style="text-align:center; color: ${acc.attack_count > 0 ? 'var(--amber)' : 'var(--text-muted)'};">${acc.attack_count || 0}</td>
-                        <td style="font-size:0.78rem; color: var(--text-muted);">${acc.lock_reason || '—'}</td>
-                        <td>
-                            <div style="display:flex; gap:4px;">
-                                <button onclick="adminActionOnAccount('unlock', '${accId}')"
-                                    style="font-size:0.72rem; padding:3px 8px; background: var(--green); color:black; border:none; border-radius:4px; cursor:pointer;">
-                                    Unlock
-                                </button>
-                                <button onclick="adminActionOnAccount('lock', '${accId}')"
-                                    style="font-size:0.72rem; padding:3px 8px; background: var(--red); color:white; border:none; border-radius:4px; cursor:pointer;">
-                                    Lock
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                }
-                document.getElementById('admin-accounts-loading').style.display = 'none';
-                document.getElementById('admin-accounts-table').style.display = 'block';
-            } catch (e) {
-                document.getElementById('admin-accounts-loading').innerText = 'Error loading accounts. Is the server running?';
-            }
-        }
-
-        async function adminActionOnAccount(action, accId) {
-            const endpoint = action === 'unlock'
-                ? `/api/v1/admin/account/unlock/${accId}`
-                : `/api/v1/admin/account/lock/${accId}`;
-            const res = await fetch(endpoint, { method: 'POST' });
-            const data = await res.json();
-            const el = document.getElementById('admin-action-result');
-            el.style.display = 'block';
-            el.innerText = `✅ ${data.message || data.status} — ${accId}`;
-            setTimeout(() => loadAdminAccounts(), 600);
-        }
-
-        async function adminUnlockAccount() {
-            const accId = document.getElementById('admin-account-input').value.trim();
-            if (!accId) return;
-            await adminActionOnAccount('unlock', accId);
-        }
-
-        async function adminLockAccount() {
-            const accId = document.getElementById('admin-account-input').value.trim();
-            if (!accId) return;
-            await adminActionOnAccount('lock', accId);
-        }
 
         // ── Live Call Ingest & Speech Recognition ────────────────────
         async function toggleLiveStream() {
@@ -1592,7 +1525,7 @@
 
             // Unlock accounts too so call can continue
             const accNum = document.getElementById('input-account-num').value.trim();
-            await fetch(`/api/v1/admin/account/unlock/${accNum}`, { method: 'POST' });
+            await fetch(`/api/v1/account/unlock/${accNum}`, { method: 'POST' });
 
             appendDialogue('bot', '✅ Acoustic threat cleared. Voice identity re-verified as authentic human. Session resumed at GREEN baseline.');
             dialogueStage = 'AWAIT_INTENT';
