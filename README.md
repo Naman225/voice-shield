@@ -256,16 +256,6 @@ Simulated under calibrated additive Gaussian and channel distortions matching en
 
 ---
 
-## 👥 Core Development Team
-
-| Member | Role |
-|:---|:---|
-| **Naman** | AI Core & ML Architecture — AASIST fine-tuning, IndieFake dataset, inference pipeline |
-| **Nikunj** | Backend — FastAPI server, WebSocket streaming, EMA risk engine, fraud gate |
-| **Harshit** | Frontend — Platform dashboard, scroll-video hero, UI/UX |
-
----
-
 ## 📄 License & Attribution
 
 This project is released under the **MIT License**.
