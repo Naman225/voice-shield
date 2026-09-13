@@ -686,7 +686,6 @@
         <button class="tab-btn active" onclick="switchTab('tab-live', this)">📞 Interactive Voice Banking (Live)</button>
         <button class="tab-btn" onclick="switchTab('tab-forensics', this)">🔬 Acoustic Forensic Scanner</button>
         <button class="tab-btn" onclick="switchTab('tab-audit', this)">📜 Regulatory Compliance Vault</button>
-        <button class="tab-btn" onclick="switchTab('tab-admin', this); loadAdminAccounts()">🛡️ Admin & Security Hub</button>
     </div>
 
     <!-- ── Main Dashboard Content ────────────────────────────────── -->
@@ -937,80 +936,6 @@
 
     </main>
 
-    <!-- ── TAB 4: Admin & Security Hub ─────────────────────────── -->
-    <div id="tab-admin" class="tab-content" style="padding: 1.5rem 2rem;">
-        <div style="display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; align-items: start;">
-
-            <!-- Left: Account Registry Table -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-title">🔐 Account Fraud Registry — Live State</span>
-                    <button class="btn-secondary" style="font-size: 0.75rem; padding: 4px 10px;" onclick="loadAdminAccounts()">↻ Refresh</button>
-                </div>
-                <div id="admin-accounts-loading" style="text-align:center; padding: 2rem; color: var(--text-muted);">
-                    Loading account states...
-                </div>
-                <div id="admin-accounts-table" style="display:none; overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Account ID</th>
-                                <th>Owner</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                                <th>Attack Count</th>
-                                <th>Lock Reason</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-accounts-tbody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Right: Supervisor Console -->
-            <div>
-                <div class="card" style="margin-bottom: 1rem;">
-                    <div class="card-header">
-                        <span class="card-title">🔓 Quick Supervisor Override</span>
-                    </div>
-                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
-                        Manually lock or unlock any account. Requires supervisor authorization ID.
-                    </div>
-                    <div style="margin-bottom: 0.5rem;">
-                        <div class="meta-label" style="margin-bottom: 4px;">Account Number</div>
-                        <input type="text" id="admin-account-input" class="select-input" placeholder="e.g. ACC-550189" value="ACC-550189">
-                    </div>
-                    <div style="margin-bottom: 0.75rem;">
-                        <div class="meta-label" style="margin-bottom: 4px;">Supervisor ID</div>
-                        <input type="text" id="admin-sup-id" class="select-input" placeholder="e.g. SUP-7701" value="SUP-7701">
-                    </div>
-                    <div style="display:flex; gap: 0.5rem;">
-                        <button class="btn-primary" style="flex:1; background: var(--green);" onclick="adminUnlockAccount()">🔓 Unlock</button>
-                        <button class="btn-primary" style="flex:1; background: var(--red); color:white;" onclick="adminLockAccount()">🔒 Lock</button>
-                    </div>
-                    <div id="admin-action-result" style="margin-top: 0.75rem; font-size:0.8rem; color: var(--cyan); display:none;"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📊 Model Performance</span>
-                    </div>
-                    <div style="display:flex; flex-direction: column; gap:0.5rem; font-size: 0.82rem;">
-                        <div class="meta-item"><div class="meta-label">ROC-AUC</div><div class="meta-value" style="color: var(--green);">95.18%</div></div>
-                        <div class="meta-item"><div class="meta-label">Accuracy</div><div class="meta-value">86.39%</div></div>
-                        <div class="meta-item"><div class="meta-label">Equal Error Rate (EER)</div><div class="meta-value" style="color: var(--amber);">13.48%</div></div>
-                        <div class="meta-item"><div class="meta-label">Inference Latency (GPU)</div><div class="meta-value" style="color: var(--cyan);">18.08 ms / 4s frame</div></div>
-                        <div class="meta-item"><div class="meta-label">Real-Time Factor</div><div class="meta-value">223.4× faster than real-time</div></div>
-                        <div class="meta-item"><div class="meta-label">Model Parameters</div><div class="meta-value">297,866 (1.22 MB)</div></div>
-                        <div class="meta-item"><div class="meta-label">GPU Device</div><div class="meta-value">NVIDIA RTX 3060 Laptop</div></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
 
     <!-- ── POPUP 1: OTP Dispatched Step-Up Modal (AMBER Flow) ─────── -->
     <div id="modal-otp-sent" class="modal-overlay">
@@ -1542,7 +1467,7 @@
 
             // Stage 1: Confirm Account & Baseline Voice Acquisition
             if (dialogueStage === "AWAIT_CONFIRM") {
-                if (text.includes('yes') || text.includes('confirm') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account')) {
+                if (text.includes('yes') || text.includes('confirm') || text.includes('naman') || text.includes('tiwari') || text.includes('rajesh') || text.includes('sharma') || text.includes('correct') || text.includes('haan') || text.includes('right') || text.includes('account')) {
                     dialogueStage = "AWAIT_INTENT";
                     speakBot("Voice identity synchronized. How can I assist you today? You can say 'Check account balance' or 'Transfer money'.");
                 } else {
