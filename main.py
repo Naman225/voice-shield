@@ -124,6 +124,12 @@ class SimulateRequest(BaseModel):
 # -------------------------------------------------------------
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
+@app.get("/health")
+def health_check():
+    """Ultra-fast, zero-overhead health check for Render / Docker orchestration."""
+    return {"status": "healthy", "service": "voice-shield"}
+
+
 @app.get("/", response_class=FileResponse)
 @app.get("/dashboard", response_class=FileResponse)
 def serve_dashboard():

@@ -4,4 +4,4 @@ services:
     runtime: docker
     plan: free
     branch: main
-    healthCheckPath: /dashboard
+    healthCheckPath: /health
