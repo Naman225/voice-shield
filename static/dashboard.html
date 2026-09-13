@@ -657,6 +657,165 @@
             font-size: 0.75rem;
             color: var(--cyan);
         }
+
+        /* ── Tab: Product Overview & Executive Showcase ──────────────── */
+        .hero-section {
+            padding: 0.5rem 0 2rem 0;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            gap: 2.5rem;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+        @media (max-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+        .hero-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--cyan);
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 5px 14px;
+            border-radius: 999px;
+            margin-bottom: 1.25rem;
+        }
+        .hero-heading {
+            font-size: 2.85rem;
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 1.25rem;
+        }
+        .hero-heading .highlight {
+            color: var(--cyan);
+            background: linear-gradient(90deg, #22d3ee 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 520px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .hero-image-wrap {
+            position: relative;
+            border-radius: var(--radius-lg);
+        }
+        .hero-main-img {
+            width: 100%;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-highlight);
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
+        }
+        .floating-telemetry-card {
+            position: absolute;
+            bottom: -20px;
+            right: -20px;
+            width: 88%;
+            max-width: 380px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-highlight);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.2);
+        }
+        @media (max-width: 640px) {
+            .floating-telemetry-card {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                width: 100%;
+                margin-top: 1rem;
+            }
+        }
+        .benchmark-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin: 2.5rem 0 1.5rem 0;
+        }
+        .benchmark-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1rem;
+            text-align: center;
+        }
+        .benchmark-val {
+            font-size: 1.75rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--cyan);
+            letter-spacing: -0.5px;
+        }
+        .benchmark-lbl {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+            font-weight: 600;
+        }
+        .threat-chain {
+            display: flex;
+            align-items: stretch;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .threat-step {
+            flex: 1;
+            min-width: 170px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1rem;
+            text-align: center;
+            position: relative;
+        }
+        .threat-step-num {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        .threat-step-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        .threat-step-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -687,16 +846,193 @@
 
     <!-- ── Navigation Tabs ───────────────────────────────────────── -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('tab-live', this)">Interactive Voice Banking (Live)</button>
-        <button class="tab-btn" onclick="switchTab('tab-forensics', this)">Acoustic Forensic Scanner</button>
-        <button class="tab-btn" onclick="switchTab('tab-audit', this)">Regulatory Compliance Vault</button>
+        <button id="tab-btn-overview" class="tab-btn active" onclick="switchTab('tab-overview', this)">Product Overview</button>
+        <button id="tab-btn-live" class="tab-btn" onclick="switchTab('tab-live', this)">Interactive Voice Banking (Live)</button>
+        <button id="tab-btn-forensics" class="tab-btn" onclick="switchTab('tab-forensics', this)">Acoustic Forensic Scanner</button>
+        <button id="tab-btn-audit" class="tab-btn" onclick="switchTab('tab-audit', this)">Regulatory Compliance Vault</button>
     </div>
 
     <!-- ── Main Dashboard Content ────────────────────────────────── -->
     <main>
 
+        <!-- ── TAB 0: Product Overview & Executive Showcase ──────── -->
+        <div id="tab-overview" class="tab-content active">
+            <div class="card" style="padding: 2.2rem 2rem;">
+                
+                <!-- Hero Grid -->
+                <div class="hero-grid">
+                    <!-- Left Hero Copy -->
+                    <div>
+                        <div class="hero-badge-tag">
+                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--cyan);"></span>
+                            AI-POWERED VOICE SECURITY FOR A SAFER INDIA
+                        </div>
+
+                        <h1 class="hero-heading">
+                            The Call Sounds Human.<br>
+                            <span class="highlight">The Attack Doesn't.</span>
+                        </h1>
+
+                        <p class="hero-desc">
+                            Real-time detection and autonomous interception of generative AI voice impersonation attacks in high-risk financial telephony and banking sessions.
+                        </p>
+
+                        <div class="hero-actions">
+                            <button class="btn-primary" style="padding: 0.75rem 1.6rem; font-size: 0.92rem; display: flex; align-items: center; gap: 0.5rem;" onclick="switchTab('tab-live', document.getElementById('tab-btn-live'))">
+                                Launch Live Demo 
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                            </button>
+                            <button class="btn-secondary" style="padding: 0.75rem 1.4rem; font-size: 0.92rem;" onclick="switchTab('tab-forensics', document.getElementById('tab-btn-forensics'))">
+                                Inspect Audio File
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.8rem; flex-wrap: wrap;">
+                            <span style="color: var(--cyan); font-weight: 700;">Patent-Pending AASIST Architecture</span>
+                            <span>•</span>
+                            <span>&lt; 35ms Streaming Latency</span>
+                            <span>•</span>
+                            <span>RBI CSF Compliant</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Visual Showcase with Photo and Floating Dark Telemetry Card -->
+                    <div class="hero-image-wrap">
+                        <img src="/static/executive_caller.jpg" alt="Executive on financial telephone call" class="hero-main-img">
+
+                        <!-- Floating Live Call Protection Card (Dark Mode) -->
+                        <div class="floating-telemetry-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green);"></span>
+                                    <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">Live Call Protection</span>
+                                </div>
+                                <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">00:00:24</span>
+                            </div>
+
+                            <!-- Synthetic Acoustic Waveform Bars -->
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 3px; height: 32px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 0 0.5rem; margin-bottom: 0.85rem;">
+                                <span style="display:inline-block; width:3px; height:12px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:20px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:28px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:16px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:24px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:30px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:14px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:22px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:18px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:26px; background:var(--cyan); border-radius:1px;"></span>
+                                <span style="display:inline-block; width:3px; height:10px; background:var(--cyan); border-radius:1px;"></span>
+                            </div>
+
+                            <!-- Split: Metadata + Circular Gauge -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                                <div style="font-size: 0.78rem; line-height: 1.45;">
+                                    <div style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Caller Line</div>
+                                    <div style="font-weight: 700; color: var(--text-primary);">+91 98765 43210</div>
+                                    <div style="color: var(--cyan); font-size: 0.72rem; margin-top: 2px;">ACC-550189 • Executive</div>
+                                    <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 2px;">Intent: Transfer ₹25,00,000</div>
+                                </div>
+
+                                <!-- Radial Mini Gauge -->
+                                <div style="text-align: center; position: relative; width: 68px; height: 68px;">
+                                    <svg width="68" height="68" viewBox="0 0 36 36">
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3.2"/>
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--green)" stroke-width="3.2" stroke-dasharray="3.8, 100"/>
+                                    </svg>
+                                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                                        <span style="font-size: 0.85rem; font-weight: 800; font-family: var(--font-mono); color: var(--green);">3.8%</span>
+                                        <span style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase;">Risk</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Status Banner -->
+                            <div style="display: flex; align-items: center; gap: 0.6rem; background: rgba(16, 185, 129, 0.12); border: 1px solid var(--green); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; margin-top: 0.85rem;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                <div style="font-size: 0.76rem; color: #a7f3d0; line-height: 1.3;">
+                                    <strong>Transaction Allowed</strong><br>
+                                    <span style="color: var(--text-muted); font-size: 0.7rem;">Authentic caller voice patterns confirmed.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Benchmark Metrics Bar ────────────────────────────── -->
+                <div class="benchmark-grid">
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">95.18%</div>
+                        <div class="benchmark-lbl">ROC-AUC Score</div>
+                    </div>
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">86.67%</div>
+                        <div class="benchmark-lbl">Deepfake Recall</div>
+                    </div>
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">13.48%</div>
+                        <div class="benchmark-lbl">Equal Error Rate (EER)</div>
+                    </div>
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">18.08 ms</div>
+                        <div class="benchmark-lbl">Latency / 4s Window</div>
+                    </div>
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">297K</div>
+                        <div class="benchmark-lbl">AASIST Parameters</div>
+                    </div>
+                    <div class="benchmark-card">
+                        <div class="benchmark-val">1.22 MB</div>
+                        <div class="benchmark-lbl">Neural Model Size</div>
+                    </div>
+                </div>
+
+                <!-- ── Threat Vector Flow ───────────────────────────────── -->
+                <div style="margin-top: 2rem; padding-top: 1.75rem; border-top: 1px solid var(--border-subtle);">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem;">
+                        THE GROWING THREAT
+                    </div>
+                    <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">
+                        A cloned voice can sound like someone you trust.
+                    </h2>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 720px; line-height: 1.5; margin-bottom: 1.5rem;">
+                        With just 3 seconds of audio harvested from social media or interviews, attackers generate authentic-sounding AI voice clones to bypass traditional voice biometrics, deceive bank operators, and authorize fraudulent transactions.
+                    </p>
+
+                    <div class="threat-chain">
+                        <div class="threat-step">
+                            <div class="threat-step-num">Step 1</div>
+                            <div class="threat-step-title">AI Voice Clone</div>
+                            <div class="threat-step-desc">Trained using public speeches, podcasts, or voicemail audio.</div>
+                        </div>
+                        <div class="threat-step">
+                            <div class="threat-step-num">Step 2</div>
+                            <div class="threat-step-title">Telephony Call</div>
+                            <div class="threat-step-desc">VoIP or GSM call initiated into banking IVR line.</div>
+                        </div>
+                        <div class="threat-step">
+                            <div class="threat-step-num">Step 3</div>
+                            <div class="threat-step-title">Impersonation</div>
+                            <div class="threat-step-desc">"Transfer ₹25 Lakh to vendor invoice account immediately."</div>
+                        </div>
+                        <div class="threat-step" style="border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.04);">
+                            <div class="threat-step-num" style="color: var(--red);">Step 4: Legacy Flaw</div>
+                            <div class="threat-step-title" style="color: #fca5a5;">Traditional Security</div>
+                            <div class="threat-step-desc">Static PINs and SMS OTPs bypassed or SIM-swapped.</div>
+                        </div>
+                        <div class="threat-step" style="border-color: var(--cyan); background: rgba(6,182,212,0.06);">
+                            <div class="threat-step-num">Voice Shield Defense</div>
+                            <div class="threat-step-title" style="color: var(--cyan);">Instant Interception</div>
+                            <div class="threat-step-desc">Spectral vocoder artifacts detected in &lt;18ms. Call cut & account locked.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <!-- ── TAB 1: Real-Time Interactive Voice Banking ────────── -->
-        <div id="tab-live" class="tab-content active">
+        <div id="tab-live" class="tab-content">
             <div class="grid-dashboard">
 
                 <!-- Left: Dynamic Caller Ingest & Setup -->
