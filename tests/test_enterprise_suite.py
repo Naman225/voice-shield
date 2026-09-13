@@ -135,9 +135,9 @@ def run_suite():
     # -------------------------------------------------------------
     print("\033[1m[SECTION 2] Complete REST API & Autonomous Fraud Gate State Machine\033[0m")
     
-    # 2.1 Root Health Manifest
+    # 2.1 Root Dashboard UI Serving
     r = client.get("/")
-    report_test("API Core", "GET / (Health Manifest)", r.status_code == 200 and r.json().get("status") == "ONLINE")
+    report_test("API Core", "GET / (Dashboard Operator UI)", r.status_code == 200 and "Voice Shield" in r.text)
 
     # 2.2 Dashboard HTML Serving
     r = client.get("/dashboard")

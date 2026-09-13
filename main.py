@@ -121,27 +121,13 @@ class SimulateRequest(BaseModel):
 # -------------------------------------------------------------
 # CORE WEB & DASHBOARD ROUTES
 # -------------------------------------------------------------
-@app.get("/")
-def root(request: Request):
-    """Serves the interactive Voice Shield Dashboard to browsers and JSON status to API clients."""
-    user_agent = request.headers.get("user-agent", "").lower()
-    accept = request.headers.get("accept", "").lower()
-
-    # If requested by browser, serve dashboard UI directly
-    if "text/html" in accept or ("mozilla" in user_agent and "json" not in accept):
-        dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
-        if os.path.isfile(dashboard_file):
-            return FileResponse(dashboard_file)
-
-    # API manifest for tests and health checks
-    return {
-        "service": "Voice Shield 🛡️ Enterprise Voice Cloning Detection & Fraud Prevention Engine",
-        "status": "ONLINE",
-        "version": "2.0.0",
-        "target_accent": "Indian English & Multi-lingual (IndieFake Fine-Tuned AASIST)",
-        "dashboard_ui": "/dashboard",
-        "documentation": "/docs",
-    }
+@app.get("/", response_class=FileResponse)
+def root():
+    """Serves the interactive Voice Shield Live Monitoring SOC Dashboard directly at root."""
+    dashboard_file = os.path.join(STATIC_DIR, "dashboard.html")
+    if not os.path.isfile(dashboard_file):
+        raise HTTPException(status_code=404, detail="Dashboard UI file not found.")
+    return FileResponse(dashboard_file)
 
 
 @app.get("/dashboard", response_class=FileResponse)
