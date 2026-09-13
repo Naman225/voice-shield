@@ -65,6 +65,10 @@ STATIC_DIR = os.path.join(_CURRENT_DIR, "static")
 if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+TEST_SAMPLES_DIR = os.path.join(_CURRENT_DIR, "test_samples")
+if os.path.isdir(TEST_SAMPLES_DIR):
+    app.mount("/test_samples", StaticFiles(directory=TEST_SAMPLES_DIR), name="test_samples")
+
 # Global Session Manager (loads AASIST model once into GPU/CPU memory)
 session_manager = CallSessionManager()
 
