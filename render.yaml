@@ -4,7 +4,4 @@ services:
     runtime: docker
     plan: free
     branch: main
-    healthCheckPath: /
-    envVars:
-      - key: PORT
-        value: 8000
+    healthCheckPath: /dashboard
