@@ -11,6 +11,7 @@ import time
 import json
 import uuid
 import random
+import asyncio
 import numpy as np
 import soundfile as sf
 from typing import Optional
@@ -776,7 +777,8 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
 
             if samples:
                 pcm_array = np.array(samples, dtype=np.float32)
-                response = session.process_audio_chunk(
+                response = await asyncio.to_thread(
+                    session.process_audio_chunk,
                     pcm_samples=pcm_array,
                     sample_rate=sample_rate,
                     is_simulated_clone=is_simulated_clone,

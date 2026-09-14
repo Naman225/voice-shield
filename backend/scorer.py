@@ -44,13 +44,16 @@ class AcousticScorer:
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
+        torch.set_grad_enabled(False)
         if self.device == "cpu":
-            torch.set_num_threads(2)
+            torch.set_num_threads(1)
 
         print(f"[AcousticScorer] Loading AASIST model on {self.device.upper()}...")
         self.model = load_pretrained_aasist(device=self.device)
         # load_pretrained_aasist already calls .eval(), but be explicit
         self.model.eval()
+        import gc
+        gc.collect()
         print("[AcousticScorer] ✅ Model ready.")
 
     # ------------------------------------------------------------------
