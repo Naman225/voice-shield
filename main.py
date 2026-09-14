@@ -168,6 +168,52 @@ def start_call(req: Optional[StartCallRequest] = None):
     }
 
 
+def _execute_forensic_scan(session, audio_data, sr):
+    """
+    Synchronous CPU-bound acoustic forensic scanner.
+    Runs on background worker threadpool to prevent blocking the async event loop.
+    Evaluates up to 3 representative speech windows across the file for sub-2s latency.
+    """
+    mono = session.normalizer.to_mono(audio_data)
+    if sr != 16000:
+        mono = session.normalizer.resample(mono, orig_sr=sr)
+
+    total_samples = len(mono)
+    duration_sec = round(total_samples / 16000.0, 2)
+    win_len = 64600  # ~4.04s @ 16kHz
+
+    if total_samples <= win_len:
+        framed = session.normalizer.fix_length(mono)
+        windows = [framed]
+    else:
+        # Evaluate up to 3 evenly spaced speech windows
+        num_windows = min(3, max(1, (total_samples - win_len) // 16000 + 1))
+        if num_windows == 1:
+            indices = [0]
+        else:
+            step = (total_samples - win_len) // (num_windows - 1)
+            indices = [i * step for i in range(num_windows)]
+        windows = [mono[idx : idx + win_len] for idx in indices]
+
+    frame_scores = []
+    for w in windows:
+        if len(windows) > 1 and np.sqrt(np.mean(w.astype(np.float64) ** 2)) < 0.012:
+            continue
+        s = session.scorer.score_frame(w)
+        frame_scores.append(s)
+        session.risk_engine.update_risk(s)
+
+    if not frame_scores:
+        framed = session.normalizer.fix_length(mono)
+        s = session.scorer.score_frame(framed)
+        frame_scores.append(s)
+        session.risk_engine.update_risk(s)
+
+    peak_score = max(frame_scores)
+    mean_score = sum(frame_scores) / len(frame_scores)
+    return peak_score, mean_score, total_samples, duration_sec, len(frame_scores)
+
+
 @app.post("/api/v1/call/upload-audio")
 async def upload_audio_file(
     file: UploadFile = File(..., description="Audio file (.wav, .mp3, .ogg, .flac) to analyze"),
@@ -200,43 +246,10 @@ async def upload_audio_file(
             account_number=inspect_account,
         )
 
-    # Convert to mono and resample to 16kHz
-    mono = session.normalizer.to_mono(audio_data)
-    if sr != 16000:
-        mono = session.normalizer.resample(mono, orig_sr=sr)
-
-    total_samples = len(mono)
-    duration_sec = round(total_samples / 16000.0, 2)
-
-    # Multi-frame acoustic forensic analysis
-    win_len = 64600  # ~4.04s
-    hop = 16000      # 1.0s hop
-    frame_scores = []
-
-    if total_samples < win_len:
-        repeats = int(math.ceil(win_len / max(1, total_samples)))
-        w = np.tile(mono, repeats)[:win_len]
-        s = session.scorer.score_frame(w)
-        frame_scores.append(s)
-        session.risk_engine.update_risk(s)
-    else:
-        for st in range(0, total_samples - win_len + 1, hop):
-            w = mono[st : st + win_len]
-            if np.sqrt(np.mean(w.astype(np.float64) ** 2)) < 0.015:
-                continue
-            s = session.scorer.score_frame(w)
-            frame_scores.append(s)
-            session.risk_engine.update_risk(s)
-
-    if not frame_scores:
-        # Fallback to direct fixed length if all windows skipped
-        framed = session.normalizer.fix_length(mono)
-        s = session.scorer.score_frame(framed)
-        frame_scores.append(s)
-        session.risk_engine.update_risk(s)
-
-    peak_score = max(frame_scores)
-    mean_score = sum(frame_scores) / len(frame_scores)
+    # Execute acoustic forensic analysis in threadpool to keep event loop responsive
+    peak_score, mean_score, total_samples, duration_sec, chunks_ingested = await asyncio.to_thread(
+        _execute_forensic_scan, session, audio_data, sr
+    )
 
     # Calibrated forensic classification
     if peak_score >= 0.70 or mean_score >= 0.55:
