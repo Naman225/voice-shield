@@ -280,7 +280,7 @@ async def upload_audio_file(
         "caller_id": caller_id,
         "account_number": inspect_account,
         "duration_sec": duration_sec,
-        "chunks_ingested": len(frame_scores),
+        "chunks_ingested": chunks_ingested,
         "samples_in_buffer": total_samples,
         "latest_frame_score": round(peak_score * 100.0, 2),
         "running_risk_pct": running_risk_pct,
