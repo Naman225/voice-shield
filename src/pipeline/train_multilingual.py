@@ -55,12 +55,20 @@ BACKUP_CKPT   = os.path.join(CHECKPOINTS, "prototype_aasist_v1.pth")
 
 def _load_english_samples(data_root):
     samples = []
+    # 1. Check Speaker-* format (IndieFake original format)
     for spk_dir in glob.glob(os.path.join(data_root, "Speaker-*")):
         spk_id = os.path.basename(spk_dir)
         for f in glob.glob(os.path.join(spk_dir, "Bonafides", "*.wav")):
             samples.append((f, 1, "en", spk_id))
         for f in glob.glob(os.path.join(spk_dir, "Deepfakes", "*.wav")):
             samples.append((f, 0, "en", spk_id))
+    # 2. Check en/bonafide and en/spoof format
+    en_dir = os.path.join(data_root, "en")
+    if os.path.isdir(en_dir):
+        for f in glob.glob(os.path.join(en_dir, "bonafide", "*.wav")):
+            samples.append((f, 1, "en", "en_real"))
+        for f in glob.glob(os.path.join(en_dir, "spoof", "*.wav")):
+            samples.append((f, 0, "en", "en_fake"))
     return samples
 
 

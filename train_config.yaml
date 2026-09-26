@@ -7,7 +7,7 @@
 # Expected structure:  indicfake_root/hi/bonafide/*.wav
 #                      indicfake_root/hi/spoof/*.wav
 #                      indicfake_root/ta/bonafide/*.wav  etc.
-indicfake_root: "/path/to/IndicFake"
+indicfake_root: "/home/naman/Desktop/SIH/IndieFake/data"
 
 # Languages to include in training
 # Available: en (English), hi (Hindi), ta (Tamil), bn (Bengali)
