@@ -1,0 +1,39 @@
+# ──────────────────────────────────────────────────────────────────
+#  Voice Shield — Multilingual Training Configuration
+#  Edit this file and run:  python train.py
+# ──────────────────────────────────────────────────────────────────
+
+# Path to your IndicFake dataset root directory
+# Expected structure:  indicfake_root/hi/bonafide/*.wav
+#                      indicfake_root/hi/spoof/*.wav
+#                      indicfake_root/ta/bonafide/*.wav  etc.
+indicfake_root: "/path/to/IndicFake"
+
+# Languages to include in training
+# Available: en (English), hi (Hindi), ta (Tamil), bn (Bengali)
+# en is always included automatically to prevent forgetting
+languages:
+  - hi
+  - ta
+
+# Training hyperparameters
+epochs: 15
+batch_size: 6
+
+# Learning rates (fine-tuning — keep lower than fresh training)
+# frontend = SincConv filterbanks (keep very low, already well-trained)
+# backend  = Graph Attention Network (can be slightly higher)
+frontend_lr: 0.000001   # 1e-6
+backend_lr:  0.0001     # 1e-4
+
+# Max audio samples to load per language from IndicFake
+# Increase if you have more data and compute time
+max_per_lang: 5000
+
+# Mix ratio: fraction of final dataset kept as English (prevents catastrophic forgetting)
+# 0.30 = 30% English + 70% new languages
+english_ratio: 0.30
+
+# Checkpoint paths (auto-detected, only change if you moved files)
+# warm_start_checkpoint: "checkpoints/best_indiefake_aasist.pth"   # source
+# output_checkpoint:     "checkpoints/best_multilingual_aasist.pth" # output
