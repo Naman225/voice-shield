@@ -1151,6 +1151,14 @@
                         </div>
                     </div>
 
+                    <!-- Direct Voice/Text Response Input Bar (Works across ALL browsers including Firefox) -->
+                    <div style="display: flex; gap: 0.4rem; margin-top: 0.6rem; align-items: center;">
+                        <input type="text" id="ivr-text-input" placeholder="Type answer (e.g. 'Rajesh Sharma', 'Transfer money', 'Yes')..." 
+                               style="flex: 1; min-width: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: 4px; padding: 0.45rem 0.75rem; font-size: 0.82rem; outline: none;"
+                               onkeydown="if(event.key==='Enter') submitTextInput()">
+                        <button type="button" class="btn-primary" style="background: var(--cyan); color: #000; font-weight: 700; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap;" onclick="submitTextInput()">Send</button>
+                    </div>
+
                     <!-- Quick Voice Simulation Chips -->
                     <div class="chips-container">
                         <span class="chips-label" style="color: var(--green);">Genuine Human Voice Steps (Click in order):</span>
@@ -1479,6 +1487,7 @@
         }
 
         let isBotMuted = false;
+        let currentBotAudio = null;
 
         function toggleBotMute() {
             isBotMuted = !isBotMuted;
@@ -1489,60 +1498,85 @@
                 btn.style.color = isBotMuted ? 'var(--amber)' : 'var(--text-secondary)';
                 btn.style.background = isBotMuted ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)';
             }
-            if (isBotMuted && window.speechSynthesis) {
-                window.speechSynthesis.cancel();
+            if (isBotMuted) {
+                if (currentBotAudio) {
+                    try { currentBotAudio.pause(); } catch (e) {}
+                }
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
                 isBotSpeaking = false;
-                document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
+                document.getElementById('live-heard-text').innerText = "Listening... (Speak, type, or click chips)";
                 ensureSpeechRecRunning();
             }
         }
 
-        // ── Speech Synthesis with Acoustic Echo Guard ────────────────
-        function speakBot(text, onComplete) {
-            lastBotText = text;
-            appendDialogue("bot", text);
-
-            if (!isBotMuted && 'speechSynthesis' in window) {
+        function playBrowserSpeechFallback(text, onEndedCallback) {
+            if (!('speechSynthesis' in window)) {
+                if (onEndedCallback) onEndedCallback();
+                return;
+            }
+            try {
                 window.speechSynthesis.cancel();
-                isBotSpeaking = true;
-                document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
-
                 if (!botFemaleVoice) updateFemaleVoice();
 
                 const utter = new SpeechSynthesisUtterance(text);
                 if (botFemaleVoice) utter.voice = botFemaleVoice;
                 utter.rate = 1.02;
-                utter.pitch = 1.25; // Distinct, pleasant female / girl pitch tone across all engines!
+                utter.pitch = 1.25;
 
-                let done = false;
-                const releaseBotSpeaking = () => {
-                    if (done) return;
-                    done = true;
-                    setTimeout(() => {
-                        isBotSpeaking = false;
-                        document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
-                        lastProcessedResultIndex = 0;
-                        latestSpokenText = '';
-                        ensureSpeechRecRunning();
-                        if (onComplete) onComplete();
-                    }, 350);
-                };
-
-                utter.onend = releaseBotSpeaking;
-                utter.onerror = releaseBotSpeaking;
-
-                // Failsafe timeout so isBotSpeaking NEVER gets permanently stuck!
-                const safeTimeout = Math.min(6000, Math.max(1800, text.split(' ').length * 280 + 700));
-                setTimeout(releaseBotSpeaking, safeTimeout);
-
+                utter.onend = onEndedCallback;
+                utter.onerror = onEndedCallback;
                 window.speechSynthesis.speak(utter);
-            } else {
+            } catch (e) {
+                if (onEndedCallback) onEndedCallback();
+            }
+        }
+
+        // ── Speech Synthesis with Neural Female Voice & Browser Fallback ────
+        function speakBot(text, onComplete) {
+            lastBotText = text;
+            appendDialogue("bot", text);
+
+            if (isBotMuted) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            isBotSpeaking = true;
+            document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
+
+            let done = false;
+            const releaseBotSpeaking = () => {
+                if (done) return;
+                done = true;
                 isBotSpeaking = false;
-                document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
+                document.getElementById('live-heard-text').innerText = "Listening... (Speak, type, or click chips)";
                 lastProcessedResultIndex = 0;
                 latestSpokenText = '';
                 ensureSpeechRecRunning();
                 if (onComplete) onComplete();
+            };
+
+            // Hard timeout ensures IVR never hangs
+            const safeMs = Math.min(8000, Math.max(2000, text.split(' ').length * 350 + 900));
+            setTimeout(releaseBotSpeaking, safeMs);
+
+            if (currentBotAudio) {
+                try { currentBotAudio.pause(); currentBotAudio.currentTime = 0; } catch (e) {}
+            }
+
+            // Primary: High-fidelity Neural Female Voice from server (Works 100% on Firefox, Chrome, Edge!)
+            try {
+                const ttsUrl = `/api/v1/tts?text=${encodeURIComponent(text)}&voice=en-IN-NeerjaNeural`;
+                currentBotAudio = new Audio(ttsUrl);
+                currentBotAudio.onended = releaseBotSpeaking;
+                currentBotAudio.onerror = () => {
+                    playBrowserSpeechFallback(text, releaseBotSpeaking);
+                };
+                currentBotAudio.play().catch(() => {
+                    playBrowserSpeechFallback(text, releaseBotSpeaking);
+                });
+            } catch (err) {
+                playBrowserSpeechFallback(text, releaseBotSpeaking);
             }
         }
 
@@ -1649,6 +1683,15 @@
                 ws.onmessage = (event) => {
                     const data = JSON.parse(event.data);
                     handleTelemetryUpdate(data);
+
+                    // Whisper STT Fallback (for Firefox & non-webkit browsers)
+                    if (data.stt_transcript && !speechRec) {
+                        const heard = data.stt_transcript.trim();
+                        if (heard.length > 0) {
+                            document.getElementById('live-heard-text').innerText = `"${heard}" (voice heard)`;
+                            handleVoiceInput(heard);
+                        }
+                    }
                 };
 
                 ws.onerror = (err) => console.error('[Voice Shield WS Error]', err);
@@ -1681,7 +1724,8 @@
                             samples: chunk,
                             sample_rate: audioCtx ? audioCtx.sampleRate : 16000,
                             account_number: accNum,
-                            caller_id: callerPhone
+                            caller_id: callerPhone,
+                            need_stt: !speechRec
                         }));
                         drawOscilloscope(chunk);
                     }
@@ -1791,6 +1835,11 @@
                     speechRec.start();
                     isRecActive = true;
                 } catch (e) {}
+            } else {
+                const heardEl = document.getElementById('live-heard-text');
+                if (heardEl) {
+                    heardEl.innerText = "AASIST mic stream active | Type or click chips below";
+                }
             }
         }
 
@@ -1837,11 +1886,28 @@
 
         // ── Voice Input & Dialogue State Machine ─────────────────────
         function simulateVoiceInput(text) {
-            if (!activeCallId) {
-                alert('Please start a live call first (click "Start Live Call").');
+            if (!isStreaming) {
+                startLiveStream().then(() => {
+                    setTimeout(() => handleVoiceInput(text), 800);
+                });
                 return;
             }
             handleVoiceInput(text);
+        }
+
+        function submitTextInput() {
+            const input = document.getElementById('ivr-text-input');
+            if (!input) return;
+            const val = input.value.trim();
+            if (!val) return;
+            input.value = '';
+            if (!isStreaming) {
+                startLiveStream().then(() => {
+                    setTimeout(() => handleVoiceInput(val), 800);
+                });
+                return;
+            }
+            handleVoiceInput(val);
         }
 
         // ── Attack / Reset Simulation (calls backend /simulate endpoint) ─

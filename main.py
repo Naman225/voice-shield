@@ -299,6 +299,32 @@ async def upload_audio_file(
     return res
 
 
+@app.get("/api/v1/tts")
+async def text_to_speech(text: str, voice: str = "en-IN-NeerjaNeural"):
+    """
+    Returns natural female neural speech audio (MP3).
+    Guarantees a consistent, friendly female IVR assistant across all browsers (Firefox, Chrome, Safari).
+    """
+    import hashlib
+    cache_dir = os.path.join(_CURRENT_DIR, "static", "tts_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+
+    clean_text = text.strip()
+    cache_key = hashlib.md5(f"{clean_text}_{voice}".encode()).hexdigest()
+    cache_path = os.path.join(cache_dir, f"{cache_key}.mp3")
+
+    if not os.path.isfile(cache_path):
+        try:
+            import edge_tts
+            tts = edge_tts.Communicate(clean_text, voice)
+            await tts.save(cache_path)
+        except Exception as e:
+            print(f"[TTS Error] {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return FileResponse(cache_path, media_type="audio/mpeg")
+
+
 @app.get("/api/v1/call/status/{call_id}")
 def get_call_status(call_id: str):
     """Fetches live call telemetry, EMA risk score, historical trend, and fraud prevention gate status."""
@@ -748,6 +774,32 @@ def admin_lock_account(account_number: str):
     }
 
 
+_whisper_model = None
+
+def _transcribe_speech_chunk(audio_pcm: np.ndarray) -> Optional[str]:
+    """Transcribe user speech using GPU Whisper tiny when browser lacks native SpeechRecognition."""
+    global _whisper_model
+    if len(audio_pcm) < 24000:
+        return None
+    rms = float(np.sqrt(np.mean(audio_pcm.astype(np.float64)**2)))
+    if rms < 0.015:
+        return None
+    try:
+        if _whisper_model is None:
+            import whisper
+            import torch
+            dev = "cuda" if torch.cuda.is_available() else "cpu"
+            _whisper_model = whisper.load_model("tiny", device=dev)
+
+        res = _whisper_model.transcribe(audio_pcm.astype(np.float32), language="en", fp16=False)
+        text = res.get("text", "").strip()
+        if len(text) >= 2 and not text.startswith(("[", "(")):
+            return text
+    except Exception as e:
+        print(f"[Whisper STT Error] {e}")
+    return None
+
+
 # -------------------------------------------------------------
 # WEBSOCKET REAL-TIME AUDIO STREAMING (FOR MIC & VOIP)
 # -------------------------------------------------------------
@@ -783,6 +835,7 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
             samples = message.get("samples", [])
             sample_rate = message.get("sample_rate", 16000)
             is_simulated_clone = bool(message.get("is_simulated_clone", False))
+            need_stt = bool(message.get("need_stt", False))
             if "account_number" in message:
                 session.account_number = message["account_number"]
             if "caller_id" in message:
@@ -796,6 +849,14 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
                     sample_rate=sample_rate,
                     is_simulated_clone=is_simulated_clone,
                 )
+
+                # Server-side Whisper STT for browsers without native WebSpeech (Firefox / Safari)
+                if need_stt and session.total_chunks_processed % 3 == 0:
+                    win = session.buffer.get_latest_window()
+                    transcript = await asyncio.to_thread(_transcribe_speech_chunk, win)
+                    if transcript:
+                        response["stt_transcript"] = transcript
+
                 await websocket.send_json(response)
             else:
                 await websocket.send_json({"status": "NO_SAMPLES_RECEIVED"})
