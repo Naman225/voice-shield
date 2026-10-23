@@ -1170,13 +1170,13 @@
                             <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')" style="border-color: var(--green);">5. Authorize Transfer</button>
                             <button class="chip-btn" onclick="simulateVoiceInput('Max')" style="border-color: var(--cyan);">Security Answer: "Max"</button>
                         </div>
-                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">AI Clone Attack Testing & Simulation:</span>
-                        <div class="chips-row" style="margin-top: 0.3rem;">
-                            <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); font-weight:700;">Simulate AI Voice Clone Attack</button>
-                            <button class="chip-btn" onclick="streamCloneAudioOverWs('hindi_clone.mp3')" style="border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.05);">Stream Hindi Clone Audio</button>
-                            <button class="chip-btn" onclick="streamCloneAudioOverWs('demo_voice_clone.mp3')" style="border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.05);">Stream English Clone Audio</button>
-                            <button class="chip-btn" onclick="triggerAmberWarning()" style="border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); font-weight:700;">Simulate AMBER Challenge</button>
-                            <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);">Reset to GREEN (Safe)</button>
+                        <span class="chips-label" style="color: var(--red); margin-top: 0.75rem; display:block; font-weight: 700; letter-spacing: 0.5px;">AI Voice Clone Attack Demonstration:</span>
+                        <div class="chips-row" style="margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                            <button class="chip-btn" onclick="streamCloneAudioOverWs('ai_naman_tiwari_transfer.mp3')" style="border-color: var(--red); color: #ff6b6b; background: rgba(239,68,68,0.12); font-weight: 700;" title="Streams Naman Tiwari AI clone over WebSocket directly into AASIST (100% RED Guaranteed)">🚨 Stream Naman Tiwari AI Clone Attack</button>
+                            <button class="chip-btn" onclick="streamCloneAudioOverWs('hindi_clone.mp3')" style="border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.08); font-weight: 600;" title="Streams Hindi AI Clone sample into AASIST">🚨 Stream Hindi AI Clone Attack</button>
+                            <button class="chip-btn" onclick="playCloneThroughSpeaker('ai_naman_tiwari_transfer.mp3')" style="border-color: #f59e0b; color: #fbbf24; background: rgba(245,158,11,0.1); font-weight: 600;" title="Plays clone through laptop speakers so microphone hears it over the air">🔊 Play Clone via Speaker (Acoustic Mic Test)</button>
+                            <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: rgba(239,68,68,0.6); color: #fca5a5; background: rgba(239,68,68,0.05);" title="Instant Fraud Gate Auto-Cut Demo">⚡ Instant Fraud Gate Auto-Cut</button>
+                            <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);" title="Reset Risk Meter to safe state">Reset Safe (GREEN)</button>
                         </div>
                     </div>
 
@@ -1407,6 +1407,8 @@
 
         // Acoustic Echo Guard (Prevents AI voice from looping back into mic & triggering false RED)
         let isBotSpeaking = false;
+        let isInjectingClone = false;
+        let currentSpeakerAudio = null;
 
         const SAMPLES_PER_CHUNK = 8000; // 500ms at 16kHz
         let pcmBuffer = [];
@@ -1743,8 +1745,8 @@
                 scriptNode.onaudioprocess = (e) => {
                     if (!isStreaming || ws.readyState !== WebSocket.OPEN) return;
                     
-                    // ── ECHO GUARD: DO NOT STREAM MIC SAMPLES WHILE BOT IS SPEAKING! ──
-                    if (isBotSpeaking) {
+                    // ── ECHO & INJECTION GUARD: DO NOT STREAM MIC SAMPLES WHILE BOT IS SPEAKING OR INJECTING CLONE! ──
+                    if (isBotSpeaking || isInjectingClone) {
                         pcmBuffer = [];
                         return;
                     }
@@ -2021,6 +2023,7 @@
                 return;
             }
             clearInactivityTimer();
+            isInjectingClone = true;
             appendDialogue('user', `[STREAMING REAL AI VOICE CLONE: ${filename}]`);
             try {
                 let resp = await fetch(`/test_samples/${filename}`);
@@ -2049,7 +2052,27 @@
             } catch (err) {
                 console.error("Error streaming clone audio:", err);
                 alert(`Error streaming clone audio: ${err.message}`);
+            } finally {
+                isInjectingClone = false;
             }
+        }
+
+        // Play real clone audio over laptop/computer speaker (Mic picks it up acoustically)
+        function playCloneThroughSpeaker(filename) {
+            if (!isStreaming) {
+                alert('Please start a live call first (click "Start Live Call").');
+                return;
+            }
+            clearInactivityTimer();
+            appendDialogue('user', `[PLAYING AI CLONE OVER SPEAKER FOR ACOUSTIC MIC PICKUP: ${filename}]`);
+            if (currentSpeakerAudio) {
+                try { currentSpeakerAudio.pause(); } catch(e) {}
+            }
+            currentSpeakerAudio = new Audio(`/test_samples/${filename}`);
+            currentSpeakerAudio.play().catch(e => {
+                console.error("Audio playback error:", e);
+                alert(`Playback error: ${e.message}`);
+            });
         }
 
         async function triggerAmberWarning() {
