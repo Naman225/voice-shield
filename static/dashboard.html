@@ -1228,12 +1228,15 @@
                 <!-- Test Audio Samples Evaluator -->
                 <div style="margin-top: 1.25rem; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); text-align: center;">
                     <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
-                        Or Evaluate Pre-loaded Test Samples:
+                        Or Evaluate Pre-loaded Test Samples (English, Hindi, Tamil):
                     </div>
                     <div style="display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap;">
-                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="loadDemoSample('demo_real_human.mp3')">Human Voice Sample</button>
-                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--red); color: #fca5a5;" onclick="loadDemoSample('demo_voice_clone.mp3')">Voice Clone Sample</button>
-                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--amber); color: #fcd34d;" onclick="loadDemoSample('generated_ai_voice_indian.mp3')">Indian Accent AI Sample</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem;" onclick="loadDemoSample('demo_real_human.mp3', 'en')">EN Human</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--red); color: #fca5a5;" onclick="loadDemoSample('demo_voice_clone.mp3', 'en')">EN AI Clone</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--green); color: #86efac;" onclick="loadDemoSample('hindi_real.mp3', 'hi')">HI Human (Hindi)</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--red); color: #fca5a5;" onclick="loadDemoSample('hindi_clone.mp3', 'hi')">HI AI Clone (Hindi)</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--green); color: #86efac;" onclick="loadDemoSample('tamil_real.mp3', 'ta')">TA Human (Tamil)</button>
+                        <button type="button" class="btn-secondary" style="font-size: 0.78rem; padding: 0.4rem 0.85rem; border-color: var(--red); color: #fca5a5;" onclick="loadDemoSample('tamil_clone.mp3', 'ta')">TA AI Clone (Tamil)</button>
                     </div>
                 </div>
 
@@ -1448,6 +1451,33 @@
             document.getElementById('input-account-num').value = `ACC-${suffix}`;
         }
 
+        // ── Voice Selection for Girl / Female Voice ──────────────────
+        let botFemaleVoice = null;
+        function updateFemaleVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+
+            // Preferred natural female voices (Indian English, UK/US female, pleasant girl voice)
+            const femalePatterns = [
+                /heera/i, /neerja/i, /veena/i, /priya/i, /aditi/i,
+                /google uk english female/i, /google us english/i,
+                /zira/i, /samantha/i, /victoria/i, /karen/i, /fiona/i, /tessa/i,
+                /female/i, /woman/i, /girl/i
+            ];
+            for (const re of femalePatterns) {
+                const found = voices.find(v => re.test(v.name));
+                if (found) { botFemaleVoice = found; break; }
+            }
+            if (!botFemaleVoice) {
+                botFemaleVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+            }
+        }
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = updateFemaleVoice;
+            updateFemaleVoice();
+        }
+
         let isBotMuted = false;
 
         function toggleBotMute() {
@@ -1463,6 +1493,7 @@
                 window.speechSynthesis.cancel();
                 isBotSpeaking = false;
                 document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
+                ensureSpeechRecRunning();
             }
         }
 
@@ -1471,24 +1502,17 @@
             lastBotText = text;
             appendDialogue("bot", text);
 
-            // Hard-stop the recognizer while the bot talks. Merely ignoring
-            // onresult (old behaviour) still lets the mic transcribe the
-            // bot's own voice out of the speakers in the background; that
-            // leaked transcript then gets flushed as "user speech" the
-            // instant the bot stops, which is what caused replies to echo
-            // the bot's own greeting back at itself.
-            if (speechRec) {
-                try { speechRec.stop(); } catch (e) {}
-            }
-
             if (!isBotMuted && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isBotSpeaking = true;
                 document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
 
+                if (!botFemaleVoice) updateFemaleVoice();
+
                 const utter = new SpeechSynthesisUtterance(text);
-                utter.rate = 1.05;
-                utter.pitch = 1.0;
+                if (botFemaleVoice) utter.voice = botFemaleVoice;
+                utter.rate = 1.02;
+                utter.pitch = 1.25; // Distinct, pleasant female / girl pitch tone across all engines!
 
                 let done = false;
                 const releaseBotSpeaking = () => {
@@ -1497,21 +1521,18 @@
                     setTimeout(() => {
                         isBotSpeaking = false;
                         document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
-                        // Fresh recognizer session — fresh result indices, so
-                        // nothing from the bot's own utterance can bleed in.
                         lastProcessedResultIndex = 0;
                         latestSpokenText = '';
-                        if (isStreaming && speechRec) {
-                            try { speechRec.start(); } catch (e) {}
-                        }
+                        ensureSpeechRecRunning();
                         if (onComplete) onComplete();
-                    }, 400); // brief buffer so speaker tail-off isn't caught by the mic
+                    }, 350);
                 };
 
                 utter.onend = releaseBotSpeaking;
                 utter.onerror = releaseBotSpeaking;
 
-                const safeTimeout = Math.max(2500, text.split(' ').length * 320 + 1000);
+                // Failsafe timeout so isBotSpeaking NEVER gets permanently stuck!
+                const safeTimeout = Math.min(6000, Math.max(1800, text.split(' ').length * 280 + 700));
                 setTimeout(releaseBotSpeaking, safeTimeout);
 
                 window.speechSynthesis.speak(utter);
@@ -1520,9 +1541,7 @@
                 document.getElementById('live-heard-text').innerText = "Listening... (Speak or play audio)";
                 lastProcessedResultIndex = 0;
                 latestSpokenText = '';
-                if (isStreaming && speechRec) {
-                    try { speechRec.start(); } catch (e) {}
-                }
+                ensureSpeechRecRunning();
                 if (onComplete) onComplete();
             }
         }
@@ -1546,6 +1565,21 @@
 
 
         // ── Live Call Ingest & Speech Recognition ────────────────────
+        let isRecActive = false;
+        let watchdogInterval = null;
+
+        function ensureSpeechRecRunning() {
+            if (!isStreaming || isBotSpeaking || !speechRec) return;
+            if (!isRecActive) {
+                try {
+                    speechRec.start();
+                    isRecActive = true;
+                } catch (e) {
+                    // Already active or transitioning
+                }
+            }
+        }
+
         async function toggleLiveStream() {
             if (isStreaming) {
                 stopLiveStream("CALL_ENDED_BY_USER");
@@ -1568,6 +1602,9 @@
                     video: false
                 });
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
                 const source = audioCtx.createMediaStreamSource(micStream);
 
                 activeCallId = `CALL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -1590,6 +1627,19 @@
                     document.getElementById('mic-icon').style.background = '#22d3ee';
                     document.getElementById('mic-text').innerText = 'End Live Call';
                     document.getElementById('ivr-status-pill').innerText = 'In Call';
+
+                    // Self-healing watchdog: recovers speech recognition or audio context if interrupted
+                    if (watchdogInterval) clearInterval(watchdogInterval);
+                    watchdogInterval = setInterval(() => {
+                        if (isStreaming) {
+                            if (audioCtx && audioCtx.state === 'suspended') {
+                                audioCtx.resume().catch(() => {});
+                            }
+                            if (!isBotSpeaking) {
+                                ensureSpeechRecRunning();
+                            }
+                        }
+                    }, 2000);
 
                     // Concise welcome speech prompt
                     dialogueStage = "AWAIT_CONFIRM";
@@ -1615,12 +1665,11 @@
                     }
 
                     const channelData = e.inputBuffer.getChannelData(0);
-                    // ── SILENCE GATE: Only drop true room silence (RMS < 0.001).
-                    // Allows mobile phone speakers and conversational voices to pass into AASIST!
+                    // ── SILENCE GATE: Only drop true room silence (RMS < 0.0008).
                     let sumSq = 0;
                     for (let i = 0; i < channelData.length; i++) sumSq += channelData[i] * channelData[i];
                     const rms = Math.sqrt(sumSq / channelData.length);
-                    if (rms < 0.001) return;
+                    if (rms < 0.0008) return;
 
                     for (let i = 0; i < channelData.length; i++) pcmBuffer.push(channelData[i]);
 
@@ -1667,8 +1716,6 @@
             if (finalSpoken.length === 0) return;
 
             if (isBotSpeaking) {
-                // Don't silently drop it — the bot is mid-sentence, so wait
-                // a beat and try again instead of the click doing nothing.
                 if (retries < 15) {
                     setTimeout(() => finalizeSpeechTurn(retries + 1), 300);
                 }
@@ -1692,11 +1739,13 @@
 
                 lastProcessedResultIndex = 0;
 
+                speechRec.onstart = () => {
+                    isRecActive = true;
+                    lastProcessedResultIndex = 0;
+                };
+
                 speechRec.onresult = (e) => {
                     if (isBotSpeaking) {
-                        // Defense-in-depth: even though we stop() the recognizer
-                        // while the bot talks, don't let any straggler result
-                        // carry forward into the next turn's transcript.
                         lastProcessedResultIndex = e.results.length;
                         return;
                     }
@@ -1713,49 +1762,34 @@
                         if (sendBtn) sendBtn.style.display = 'inline-block';
                     }
 
-                    // ── PATIENT SPEECH BUFFER: Wait 2.8 seconds of sustained silence ──
-                    // Allows caller to pause, breathe, or play phone audio clips without being cut off!
+                    // ── PATIENT SPEECH BUFFER: Wait 2.2 seconds of sustained silence ──
                     clearTimeout(speechDebounceTimer);
                     speechDebounceTimer = setTimeout(() => {
                         lastProcessedResultIndex = e.results.length;
                         finalizeSpeechTurn();
-                    }, 2800);
+                    }, 2200);
                 };
 
                 speechRec.onerror = (err) => {
+                    isRecActive = false;
                     if (err.error !== 'no-speech') {
-                        console.log('SpeechRec error:', err);
+                        console.warn('SpeechRec error:', err);
+                    }
+                    if (isStreaming && !isBotSpeaking) {
+                        setTimeout(ensureSpeechRecRunning, 350);
                     }
                 };
 
-                // CRITICAL: every time the recognizer actually starts a new
-                // session (initial start, restart after the bot spoke, or
-                // the browser's own auto-restart below), the browser resets
-                // e.result indices back to 0 for that session. If we don't
-                // also reset lastProcessedResultIndex here, it keeps the
-                // stale count from the previous session, and the very next
-                // onresult loop (`for i = lastProcessedResultIndex...`)
-                // silently skips every result until the new session
-                // happens to accumulate more results than that stale
-                // number — which is exactly why speech was randomly
-                // "not heard": it depended on how many results piled up
-                // before vs after a restart, not on what was actually said.
-                speechRec.onstart = () => {
-                    lastProcessedResultIndex = 0;
-                };
-
                 speechRec.onend = () => {
+                    isRecActive = false;
                     if (isStreaming && !isBotSpeaking) {
-                        setTimeout(() => {
-                            try {
-                                if (isStreaming && speechRec) speechRec.start();
-                            } catch (e) {}
-                        }, 250);
+                        setTimeout(ensureSpeechRecRunning, 200);
                     }
                 };
 
                 try {
                     speechRec.start();
+                    isRecActive = true;
                 } catch (e) {}
             }
         }
@@ -1771,6 +1805,8 @@
             const sendBtn = document.getElementById('btn-submit-speech');
             if (sendBtn) sendBtn.style.display = 'none';
 
+            if (watchdogInterval) { clearInterval(watchdogInterval); watchdogInterval = null; }
+            isRecActive = false;
             if (timerInterval) clearInterval(timerInterval);
             if (scriptNode) scriptNode.disconnect();
             if (micStream) micStream.getTracks().forEach(t => t.stop());

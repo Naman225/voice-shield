@@ -12,7 +12,9 @@ from .aasist_core import Model  # noqa: E402
 _MODELS_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.abspath(os.path.join(_MODELS_DIR, "..", ".."))
 
-DEFAULT_CHECKPOINT = os.path.join(_REPO_ROOT, "checkpoints", "best_indiefake_aasist.pth")
+MULTILINGUAL_CHECKPOINT = os.path.join(_REPO_ROOT, "checkpoints", "best_multilingual_aasist.pth")
+ENGLISH_CHECKPOINT = os.path.join(_REPO_ROOT, "checkpoints", "best_indiefake_aasist.pth")
+DEFAULT_CHECKPOINT = MULTILINGUAL_CHECKPOINT if os.path.isfile(MULTILINGUAL_CHECKPOINT) else ENGLISH_CHECKPOINT
 FALLBACK_CHECKPOINT = os.path.join(_REPO_ROOT, "checkpoints", "prototype_aasist_v1.pth")
 
 # Standard AASIST model configuration (matches the published paper / upstream repo)
@@ -32,7 +34,7 @@ def load_pretrained_aasist(checkpoint_path=None, device="cpu"):
 
     Args:
         checkpoint_path: Path to a .pth state-dict file. Defaults to
-            ``checkpoints/best_indiefake_aasist.pth`` inside the repo root.
+            ``checkpoints/best_multilingual_aasist.pth`` (or ``best_indiefake_aasist.pth``).
         device: PyTorch device string (e.g. "cuda" or "cpu").
 
     Returns:
@@ -40,8 +42,11 @@ def load_pretrained_aasist(checkpoint_path=None, device="cpu"):
         to ``device`` and set to eval mode.
     """
     if checkpoint_path is None:
-        checkpoint_path = DEFAULT_CHECKPOINT
-        if not os.path.isfile(checkpoint_path):
+        if os.path.isfile(MULTILINGUAL_CHECKPOINT):
+            checkpoint_path = MULTILINGUAL_CHECKPOINT
+        elif os.path.isfile(ENGLISH_CHECKPOINT):
+            checkpoint_path = ENGLISH_CHECKPOINT
+        else:
             checkpoint_path = FALLBACK_CHECKPOINT
 
     model = Model(AASIST_CONFIG)
