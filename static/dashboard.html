@@ -1170,9 +1170,11 @@
                             <button class="chip-btn" onclick="simulateVoiceInput('I authorize this immediate wire transfer from my account')" style="border-color: var(--green);">5. Authorize Transfer</button>
                             <button class="chip-btn" onclick="simulateVoiceInput('Max')" style="border-color: var(--cyan);">Security Answer: "Max"</button>
                         </div>
-                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">AI Clone Attack Simulation:</span>
+                        <span class="chips-label" style="color: var(--red); margin-top: 0.6rem; display:block;">AI Clone Attack Testing & Simulation:</span>
                         <div class="chips-row" style="margin-top: 0.3rem;">
                             <button class="chip-btn" onclick="triggerCloneAttack()" style="border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); font-weight:700;">Simulate AI Voice Clone Attack</button>
+                            <button class="chip-btn" onclick="streamCloneAudioOverWs('hindi_clone.mp3')" style="border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.05);">Stream Hindi Clone Audio</button>
+                            <button class="chip-btn" onclick="streamCloneAudioOverWs('demo_voice_clone.mp3')" style="border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.05);">Stream English Clone Audio</button>
                             <button class="chip-btn" onclick="triggerAmberWarning()" style="border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); font-weight:700;">Simulate AMBER Challenge</button>
                             <button class="chip-btn" onclick="triggerResetGreen()" style="border-color: var(--green); color: var(--green);">Reset to GREEN (Safe)</button>
                         </div>
@@ -1531,6 +1533,32 @@
             }
         }
 
+        // ── 10-Second Caller Inactivity Watchdog ─────────────────────
+        let inactivityTimer = null;
+        const INACTIVITY_TIMEOUT_MS = 10000; // 10s silence limit
+
+        function resetInactivityTimer() {
+            clearInactivityTimer();
+            if (!isStreaming || isBotSpeaking) return;
+            inactivityTimer = setTimeout(handleInactivityTimeout, INACTIVITY_TIMEOUT_MS);
+        }
+
+        function clearInactivityTimer() {
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = null;
+            }
+        }
+
+        function handleInactivityTimeout() {
+            clearInactivityTimer();
+            if (!isStreaming || isBotSpeaking) return;
+            console.log('[Inactivity Watchdog] 10 seconds of silence detected. Terminating call.');
+            speakBot("Thank you for contacting Secure Voice Banking. Have a great day. Goodbye.", () => {
+                stopLiveStream("INACTIVITY_TIMEOUT");
+            });
+        }
+
         // ── Speech Synthesis with Neural Female Voice & Browser Fallback ────
         function speakBot(text, onComplete) {
             lastBotText = text;
@@ -1541,8 +1569,31 @@
                 return;
             }
 
+            // Pause inactivity countdown while bot is speaking
+            clearInactivityTimer();
+
             isBotSpeaking = true;
             document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
+
+            // 1. HARD STOP SPEECH RECOGNITION while bot speaks (prevents loopback/echo)
+            if (speechRec) {
+                try { speechRec.abort(); } catch (e) {}
+                speechRec = null;
+                isRecActive = false;
+            }
+
+            // 2. CANCEL ANY ACTIVE AUDIO / SPEECH (ELIMINATES DOUBLE VOICE)
+            if (currentBotAudio) {
+                try {
+                    currentBotAudio.pause();
+                    currentBotAudio.currentTime = 0;
+                    currentBotAudio.src = "";
+                } catch (e) {}
+                currentBotAudio = null;
+            }
+            if (window.speechSynthesis) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
 
             let done = false;
             const releaseBotSpeaking = () => {
@@ -1550,21 +1601,17 @@
                 done = true;
                 isBotSpeaking = false;
                 document.getElementById('live-heard-text').innerText = "Listening... (Speak, type, or click chips)";
-                lastProcessedResultIndex = 0;
                 latestSpokenText = '';
                 ensureSpeechRecRunning();
+                resetInactivityTimer(); // Start 10-second caller response countdown
                 if (onComplete) onComplete();
             };
 
             // Hard timeout ensures IVR never hangs
-            const safeMs = Math.min(8000, Math.max(2000, text.split(' ').length * 350 + 900));
+            const safeMs = Math.min(9000, Math.max(2200, text.split(' ').length * 360 + 1000));
             setTimeout(releaseBotSpeaking, safeMs);
 
-            if (currentBotAudio) {
-                try { currentBotAudio.pause(); currentBotAudio.currentTime = 0; } catch (e) {}
-            }
-
-            // Primary: High-fidelity Neural Female Voice from server (Works 100% on Firefox, Chrome, Edge!)
+            // Primary: High-fidelity Neural Female Voice from server
             try {
                 const ttsUrl = `/api/v1/tts?text=${encodeURIComponent(text)}&voice=en-IN-NeerjaNeural`;
                 currentBotAudio = new Audio(ttsUrl);
@@ -1603,14 +1650,9 @@
         let watchdogInterval = null;
 
         function ensureSpeechRecRunning() {
-            if (!isStreaming || isBotSpeaking || !speechRec) return;
-            if (!isRecActive) {
-                try {
-                    speechRec.start();
-                    isRecActive = true;
-                } catch (e) {
-                    // Already active or transitioning
-                }
+            if (!isStreaming || isBotSpeaking) return;
+            if (!isRecActive || !speechRec) {
+                initSpeechRecognition();
             }
         }
 
@@ -1747,10 +1789,10 @@
 
         let speechDebounceTimer = null;
         let latestSpokenText = '';
-        let lastProcessedResultIndex = 0;
 
         function submitSpeechNow() {
             clearTimeout(speechDebounceTimer);
+            resetInactivityTimer();
             finalizeSpeechTurn();
         }
 
@@ -1766,6 +1808,14 @@
                 return;
             }
 
+            // 1. Immediately abort current speechRec so e.results is completely discarded
+            // This guarantees previous sentences NEVER accumulate into future turns!
+            if (speechRec) {
+                try { speechRec.abort(); } catch (e) {}
+                speechRec = null;
+                isRecActive = false;
+            }
+
             latestSpokenText = '';
             const sendBtn = document.getElementById('btn-submit-speech');
             if (sendBtn) sendBtn.style.display = 'none';
@@ -1774,83 +1824,87 @@
         }
 
         function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-                speechRec = new SpeechClass();
-                speechRec.continuous = true;
-                speechRec.interimResults = true;
-                speechRec.lang = 'en-IN';
-
-                lastProcessedResultIndex = 0;
-
-                speechRec.onstart = () => {
-                    isRecActive = true;
-                    lastProcessedResultIndex = 0;
-                };
-
-                speechRec.onresult = (e) => {
-                    if (isBotSpeaking) {
-                        lastProcessedResultIndex = e.results.length;
-                        return;
-                    }
-
-                    let currentTurn = '';
-                    for (let i = lastProcessedResultIndex; i < e.results.length; ++i) {
-                        currentTurn += ' ' + e.results[i][0].transcript;
-                    }
-                    latestSpokenText = currentTurn.trim();
-
-                    const sendBtn = document.getElementById('btn-submit-speech');
-                    if (latestSpokenText) {
-                        document.getElementById('live-heard-text').innerText = `"${latestSpokenText}" (speaking... pause to submit)`;
-                        if (sendBtn) sendBtn.style.display = 'inline-block';
-                    }
-
-                    // ── PATIENT SPEECH BUFFER: Wait 2.8 seconds of sustained silence ──
-                    // Allows caller to complete full sentences and breathe without being cut off!
-                    clearTimeout(speechDebounceTimer);
-                    speechDebounceTimer = setTimeout(() => {
-                        lastProcessedResultIndex = e.results.length;
-                        finalizeSpeechTurn();
-                    }, 2800);
-                };
-
-                speechRec.onerror = (err) => {
-                    isRecActive = false;
-                    if (err.error !== 'no-speech') {
-                        console.warn('SpeechRec error:', err);
-                    }
-                    if (isStreaming && !isBotSpeaking) {
-                        setTimeout(ensureSpeechRecRunning, 350);
-                    }
-                };
-
-                speechRec.onend = () => {
-                    isRecActive = false;
-                    if (isStreaming && !isBotSpeaking) {
-                        setTimeout(ensureSpeechRecRunning, 200);
-                    }
-                };
-
-                try {
-                    speechRec.start();
-                    isRecActive = true;
-                } catch (e) {}
-            } else {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
                 const heardEl = document.getElementById('live-heard-text');
                 if (heardEl) {
                     heardEl.innerText = "AASIST mic stream active | Type or click chips below";
                 }
+                return;
             }
+
+            if (!isStreaming || isBotSpeaking) return;
+
+            // Abort any old instance first
+            if (speechRec) {
+                try { speechRec.abort(); } catch (e) {}
+                speechRec = null;
+                isRecActive = false;
+            }
+
+            const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRec = new SpeechClass();
+            speechRec.continuous = true;
+            speechRec.interimResults = true;
+            speechRec.lang = 'en-IN';
+
+            speechRec.onstart = () => {
+                isRecActive = true;
+            };
+
+            speechRec.onresult = (e) => {
+                if (isBotSpeaking) return;
+                // Caller spoke something: reset 10-second inactivity countdown!
+                resetInactivityTimer();
+
+                let turnText = '';
+                for (let i = 0; i < e.results.length; ++i) {
+                    turnText += ' ' + e.results[i][0].transcript;
+                }
+                latestSpokenText = turnText.trim();
+
+                const sendBtn = document.getElementById('btn-submit-speech');
+                if (latestSpokenText) {
+                    document.getElementById('live-heard-text').innerText = `"${latestSpokenText}" (speaking... pause to submit)`;
+                    if (sendBtn) sendBtn.style.display = 'inline-block';
+                }
+
+                // Wait 2.2 seconds of silence to finalize turn
+                clearTimeout(speechDebounceTimer);
+                speechDebounceTimer = setTimeout(() => {
+                    finalizeSpeechTurn();
+                }, 2200);
+            };
+
+            speechRec.onerror = (err) => {
+                isRecActive = false;
+                if (err.error !== 'no-speech') {
+                    console.warn('SpeechRec error:', err);
+                }
+                if (isStreaming && !isBotSpeaking) {
+                    setTimeout(ensureSpeechRecRunning, 350);
+                }
+            };
+
+            speechRec.onend = () => {
+                isRecActive = false;
+                if (isStreaming && !isBotSpeaking) {
+                    setTimeout(ensureSpeechRecRunning, 200);
+                }
+            };
+
+            try {
+                speechRec.start();
+                isRecActive = true;
+            } catch (e) {}
         }
 
         function stopLiveStream(reason) {
             isStreaming = false;
             isBotSpeaking = false;
             dialogueStage = "IDLE";
-            lastProcessedResultIndex = 0;
             latestSpokenText = '';
             clearTimeout(speechDebounceTimer);
+            clearInactivityTimer();
 
             const sendBtn = document.getElementById('btn-submit-speech');
             if (sendBtn) sendBtn.style.display = 'none';
@@ -1862,7 +1916,10 @@
             if (micStream) micStream.getTracks().forEach(t => t.stop());
             if (audioCtx) audioCtx.close();
             if (ws && ws.readyState === WebSocket.OPEN) ws.close();
-            if (speechRec) { speechRec.stop(); speechRec = null; }
+            if (speechRec) {
+                try { speechRec.abort(); } catch (e) {}
+                speechRec = null;
+            }
 
             const btn = document.getElementById('btn-live-stream');
             if (reason === "AUTOCUT_RED") {
@@ -1870,6 +1927,12 @@
                 document.getElementById('mic-icon').style.background = '#ef4444';
                 document.getElementById('mic-text').innerText = 'Call Cut (AI Blocked)';
                 document.getElementById('ivr-status-pill').innerText = 'Call Cut';
+            } else if (reason === "INACTIVITY_TIMEOUT") {
+                btn.className = 'btn-live-stream';
+                document.getElementById('mic-icon').style.background = '#ef4444';
+                document.getElementById('mic-text').innerText = 'Call Ended (10s Silence)';
+                document.getElementById('ivr-status-pill').innerText = 'Disconnected (10s Silence)';
+                document.getElementById('live-heard-text').innerText = 'Call terminated due to 10 seconds of caller silence.';
             } else {
                 btn.className = 'btn-live-stream';
                 document.getElementById('mic-icon').style.background = '#ef4444';
@@ -1887,6 +1950,7 @@
 
         // ── Voice Input & Dialogue State Machine ─────────────────────
         function simulateVoiceInput(text) {
+            resetInactivityTimer();
             if (!isStreaming) {
                 startLiveStream().then(() => {
                     setTimeout(() => handleVoiceInput(text), 800);
@@ -1897,6 +1961,7 @@
         }
 
         function submitTextInput() {
+            resetInactivityTimer();
             const input = document.getElementById('ivr-text-input');
             if (!input) return;
             const val = input.value.trim();
@@ -1917,6 +1982,7 @@
                 alert('Please start a live call first (click "Start Live Call").');
                 return;
             }
+            clearInactivityTimer();
             appendDialogue('user', '[AI CLONE ATTACK INITIATED — Synthetic voice substituted]');
 
             const res = await fetch(`/api/v1/call/simulate/${activeCallId}`, {
@@ -1948,11 +2014,50 @@
             }
         }
 
+        // Stream real audio clone files over the active WebSocket (AASIST live scoring)
+        async function streamCloneAudioOverWs(filename) {
+            if (!isStreaming || !ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Please start a live call first (click "Start Live Call").');
+                return;
+            }
+            clearInactivityTimer();
+            appendDialogue('user', `[STREAMING REAL AI VOICE CLONE: ${filename}]`);
+            try {
+                let resp = await fetch(`/test_samples/${filename}`);
+                if (!resp.ok) resp = await fetch(`/static/demo_audio/${filename}`);
+                if (!resp.ok) throw new Error(`Cannot load ${filename}`);
+                const arrayBuf = await resp.arrayBuffer();
+                const tempCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                const decoded = await tempCtx.decodeAudioData(arrayBuf);
+                const pcm = decoded.getChannelData(0);
+
+                const accNum = document.getElementById('input-account-num').value.trim() || 'ACC-550189';
+                const callerPhone = document.getElementById('input-caller-line').value.trim();
+                const chunkSize = 8000;
+                for (let i = 0; i < pcm.length; i += chunkSize) {
+                    if (!isStreaming || ws.readyState !== WebSocket.OPEN) break;
+                    const chunk = Array.from(pcm.slice(i, i + chunkSize));
+                    ws.send(JSON.stringify({
+                        samples: chunk,
+                        sample_rate: 16000,
+                        account_number: accNum,
+                        caller_id: callerPhone
+                    }));
+                    drawOscilloscope(chunk);
+                    await new Promise(r => setTimeout(r, 220));
+                }
+            } catch (err) {
+                console.error("Error streaming clone audio:", err);
+                alert(`Error streaming clone audio: ${err.message}`);
+            }
+        }
+
         async function triggerAmberWarning() {
             if (!activeCallId) {
                 alert('Please start a live call first (click "Start Live Call").');
                 return;
             }
+            clearInactivityTimer();
             appendDialogue('user', '[AMBER ALERT — Voice anomaly detected mid-call]');
 
             const res = await fetch(`/api/v1/call/simulate/${activeCallId}`, {
@@ -2009,6 +2114,7 @@
             stepUpVerifiedOnce = false;
             preChallengeStage = null;
             preChallengePrompt = null;
+            resetInactivityTimer();
         }
 
         // Helper to extract amounts from natural speech
@@ -2107,8 +2213,9 @@
             if (dialogueStage === "AWAIT_TRANSFER_PURPOSE") {
                 // If caller spoke authorization directly
                 if (text.includes('authorize') || text.includes('authorization')) {
-                    speakBot("Spoken authorization phrase recognized. Verifying acoustic deepfake telemetry...");
-                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                    speakBot("Spoken authorization phrase recognized. Verifying acoustic deepfake telemetry...", () => {
+                        executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                    });
                     return;
                 }
                 dialogueStage = "AWAIT_TRANSFER_PHRASE";
@@ -2119,8 +2226,9 @@
             // Stage 4: Wire Transfer - Spoken Question 2 (Spoken Biometric Authorization Phrase)
             if (dialogueStage === "AWAIT_TRANSFER_PHRASE") {
                 if (text.includes('authorize') || text.includes('wire transfer') || text.includes('transfer') || text.includes('account') || text.includes('immediate') || text.includes('yes') || text.includes('confirm') || text.includes('proceed') || text.includes('ok') || text.length >= 6) {
-                    speakBot("Spoken authorization phrase validated. Analyzing multi-window acoustic frames for synthetic speech...");
-                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                    speakBot("Spoken authorization phrase validated. Analyzing multi-window acoustic frames for synthetic speech...", () => {
+                        executeVoiceWireTransfer(accNum, pendingTransferAmount);
+                    });
                 } else {
                     speakBot("Please clearly recite: 'I authorize this immediate wire transfer from my account' to complete authorization.");
                 }

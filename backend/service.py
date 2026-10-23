@@ -165,7 +165,7 @@ class ActiveCallSession:
 
         # 2. Push active speech into sliding buffer (skip near-silent chunks so pauses don't dilute buffer)
         chunk_rms = float(np.sqrt(np.mean(mono_samples.astype(np.float64) ** 2)))
-        if chunk_rms >= 0.002:
+        if chunk_rms >= 0.0008:
             self.buffer.push_samples(mono_samples)
 
         # Track speech vs silence to detect complete sentences without interrupting caller
@@ -197,7 +197,7 @@ class ActiveCallSession:
             # VAD Gate: Check window energy.
             # If silence / ambient noise, skip EMA update so pauses do NOT decay risk score.
             window_rms = float(np.sqrt(np.mean(window_audio.astype(np.float64) ** 2)))
-            if window_rms < 0.002:
+            if window_rms < 0.0008:
                 # Near-silent window — hold current risk (silence is absence of speech, not evidence of human)
                 pass
             elif is_simulated_clone:

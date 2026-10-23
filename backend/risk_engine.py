@@ -10,7 +10,7 @@ class EMARiskEngine:
     Default alpha = 0.70 (70% previous history weight, 30% new window weight).
     """
 
-    def __init__(self, alpha: float = 0.70):
+    def __init__(self, alpha: float = 0.55):
         self.alpha = alpha
         self.running_risk = 0.05  # Initialize at safe baseline 5%
         self.history: List[Tuple[float, float, str]] = []  # (timestamp, score, tier)
