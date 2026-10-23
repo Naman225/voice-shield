@@ -850,10 +850,12 @@ async def websocket_call_stream(websocket: WebSocket, call_id: str):
                     is_simulated_clone=is_simulated_clone,
                 )
 
-                # Server-side Whisper STT for browsers without native WebSpeech (Firefox / Safari)
-                if need_stt and session.total_chunks_processed % 3 == 0:
-                    win = session.buffer.get_latest_window()
-                    transcript = await asyncio.to_thread(_transcribe_speech_chunk, win)
+                # Pop turn_ready_audio before JSON serialization
+                turn_audio = response.pop("turn_ready_audio", None)
+
+                # Server-side Whisper STT: ONLY transcribes when caller has FINISHED speaking and paused for 2.5s!
+                if need_stt and turn_audio is not None:
+                    transcript = await asyncio.to_thread(_transcribe_speech_chunk, turn_audio)
                     if transcript:
                         response["stt_transcript"] = transcript
 

@@ -116,6 +116,11 @@ class ActiveCallSession:
         # climb back into AMBER → verify again" loop for a sustained clone.
         self.step_up_used = False
 
+        # Natural conversational turn tracking (VAD end-of-speech detection)
+        self.speech_turn_active = False
+        self.speech_turn_chunks: List[np.ndarray] = []
+        self.speech_turn_silence_count = 0
+
     def process_audio_chunk(
         self,
         pcm_samples:       np.ndarray,
@@ -162,6 +167,26 @@ class ActiveCallSession:
         chunk_rms = float(np.sqrt(np.mean(mono_samples.astype(np.float64) ** 2)))
         if chunk_rms >= 0.002:
             self.buffer.push_samples(mono_samples)
+
+        # Track speech vs silence to detect complete sentences without interrupting caller
+        turn_ready_audio = None
+        if chunk_rms >= 0.012:
+            self.speech_turn_active = True
+            self.speech_turn_silence_count = 0
+            self.speech_turn_chunks.append(mono_samples)
+            if len(self.speech_turn_chunks) > 20:  # cap at ~10s
+                self.speech_turn_chunks.pop(0)
+        elif self.speech_turn_active:
+            self.speech_turn_silence_count += 1
+            self.speech_turn_chunks.append(mono_samples)
+            # Require 5 consecutive quiet chunks (2.5 seconds of silence) to finalize the sentence!
+            if self.speech_turn_silence_count >= 5:
+                total_speech = sum(len(c) for c in self.speech_turn_chunks)
+                if total_speech >= 24000:  # at least 1.5s total audio
+                    turn_ready_audio = np.concatenate(self.speech_turn_chunks)
+                self.speech_turn_active = False
+                self.speech_turn_chunks = []
+                self.speech_turn_silence_count = 0
 
         # 3. Run AASIST inference once buffer contains at least 1.0s (16,000 samples)
         #    or a full window (64,600 samples). This allows short phrases like "transfer 50000"
@@ -233,6 +258,7 @@ class ActiveCallSession:
             "call_action":        call_action,
             "voice_prompt":       voice_prompt,
             "security_question":  security_q,
+            "turn_ready_audio":   turn_ready_audio,
         }
 
     def get_summary(self) -> Dict[str, Any]:

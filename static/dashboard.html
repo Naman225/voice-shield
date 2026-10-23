@@ -1685,10 +1685,10 @@
                     handleTelemetryUpdate(data);
 
                     // Whisper STT Fallback (for Firefox & non-webkit browsers)
-                    if (data.stt_transcript && !speechRec) {
+                    if (data.stt_transcript && !speechRec && !isBotSpeaking) {
                         const heard = data.stt_transcript.trim();
-                        if (heard.length > 0) {
-                            document.getElementById('live-heard-text').innerText = `"${heard}" (voice heard)`;
+                        if (heard.length >= 3) {
+                            document.getElementById('live-heard-text').innerText = `"${heard}" (processing...)`;
                             handleVoiceInput(heard);
                         }
                     }
@@ -1757,7 +1757,7 @@
         function finalizeSpeechTurn(retries) {
             retries = retries || 0;
             const finalSpoken = latestSpokenText.trim();
-            if (finalSpoken.length === 0) return;
+            if (finalSpoken.length < 2) return;
 
             if (isBotSpeaking) {
                 if (retries < 15) {
@@ -1802,16 +1802,17 @@
 
                     const sendBtn = document.getElementById('btn-submit-speech');
                     if (latestSpokenText) {
-                        document.getElementById('live-heard-text').innerText = `"${latestSpokenText}" (listening...)`;
+                        document.getElementById('live-heard-text').innerText = `"${latestSpokenText}" (speaking... pause to submit)`;
                         if (sendBtn) sendBtn.style.display = 'inline-block';
                     }
 
-                    // ── PATIENT SPEECH BUFFER: Wait 2.2 seconds of sustained silence ──
+                    // ── PATIENT SPEECH BUFFER: Wait 2.8 seconds of sustained silence ──
+                    // Allows caller to complete full sentences and breathe without being cut off!
                     clearTimeout(speechDebounceTimer);
                     speechDebounceTimer = setTimeout(() => {
                         lastProcessedResultIndex = e.results.length;
                         finalizeSpeechTurn();
-                    }, 2200);
+                    }, 2800);
                 };
 
                 speechRec.onerror = (err) => {
