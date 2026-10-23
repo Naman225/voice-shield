@@ -1492,6 +1492,8 @@
 
         let isBotMuted = false;
         let currentBotAudio = null;
+        let botSafetyTimeout = null;
+        let currentBotSpeechToken = 0;
 
         function toggleBotMute() {
             isBotMuted = !isBotMuted;
@@ -1503,8 +1505,15 @@
                 btn.style.background = isBotMuted ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)';
             }
             if (isBotMuted) {
+                if (botSafetyTimeout) {
+                    clearTimeout(botSafetyTimeout);
+                    botSafetyTimeout = null;
+                }
                 if (currentBotAudio) {
-                    try { currentBotAudio.pause(); } catch (e) {}
+                    currentBotAudio.onended = null;
+                    currentBotAudio.onerror = null;
+                    try { currentBotAudio.pause(); currentBotAudio.src = ""; } catch (e) {}
+                    currentBotAudio = null;
                 }
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
                 isBotSpeaking = false;
@@ -1513,7 +1522,8 @@
             }
         }
 
-        function playBrowserSpeechFallback(text, onEndedCallback) {
+        function playBrowserSpeechFallback(text, onEndedCallback, token) {
+            if (token && token !== currentBotSpeechToken) return;
             if (!('speechSynthesis' in window)) {
                 if (onEndedCallback) onEndedCallback();
                 return;
@@ -1527,8 +1537,17 @@
                 utter.rate = 1.02;
                 utter.pitch = 1.25;
 
-                utter.onend = onEndedCallback;
-                utter.onerror = onEndedCallback;
+                let fallbackEnded = false;
+                const endHandler = () => {
+                    if (fallbackEnded) return;
+                    fallbackEnded = true;
+                    if (!token || token === currentBotSpeechToken) {
+                        if (onEndedCallback) onEndedCallback();
+                    }
+                };
+
+                utter.onend = endHandler;
+                utter.onerror = endHandler;
                 window.speechSynthesis.speak(utter);
             } catch (e) {
                 if (onEndedCallback) onEndedCallback();
@@ -1561,21 +1580,12 @@
             });
         }
 
-        // ── Speech Synthesis with Neural Female Voice & Browser Fallback ────
+        // ── Speech Synthesis with Neural Female Voice & Single-Voice Token Guard ────
         function speakBot(text, onComplete) {
             lastBotText = text;
             appendDialogue("bot", text);
 
-            if (isBotMuted) {
-                if (onComplete) onComplete();
-                return;
-            }
-
-            // Pause inactivity countdown while bot is speaking
-            clearInactivityTimer();
-
-            isBotSpeaking = true;
-            document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
+            const thisToken = ++currentBotSpeechToken;
 
             // 1. HARD STOP SPEECH RECOGNITION while bot speaks (prevents loopback/echo)
             if (speechRec) {
@@ -1584,8 +1594,14 @@
                 isRecActive = false;
             }
 
-            // 2. CANCEL ANY ACTIVE AUDIO / SPEECH (ELIMINATES DOUBLE VOICE)
+            // 2. HARD CANCEL PREVIOUS TIMEOUT AND AUDIO (ELIMINATES DOUBLE VOICE)
+            if (botSafetyTimeout) {
+                clearTimeout(botSafetyTimeout);
+                botSafetyTimeout = null;
+            }
             if (currentBotAudio) {
+                currentBotAudio.onended = null;
+                currentBotAudio.onerror = null;
                 try {
                     currentBotAudio.pause();
                     currentBotAudio.currentTime = 0;
@@ -1597,35 +1613,76 @@
                 try { window.speechSynthesis.cancel(); } catch (e) {}
             }
 
+            if (isBotMuted) {
+                isBotSpeaking = false;
+                if (onComplete) onComplete();
+                return;
+            }
+
+            // Pause inactivity countdown while bot is speaking
+            clearInactivityTimer();
+
+            isBotSpeaking = true;
+            document.getElementById('live-heard-text').innerText = "Bot speaking... (Please wait)";
+
             let done = false;
             const releaseBotSpeaking = () => {
-                if (done) return;
+                if (done || thisToken !== currentBotSpeechToken) return;
                 done = true;
-                isBotSpeaking = false;
-                document.getElementById('live-heard-text').innerText = "Listening... (Speak, type, or click chips)";
-                latestSpokenText = '';
-                ensureSpeechRecRunning();
-                resetInactivityTimer(); // Start 10-second caller response countdown
-                if (onComplete) onComplete();
+                if (botSafetyTimeout) {
+                    clearTimeout(botSafetyTimeout);
+                    botSafetyTimeout = null;
+                }
+                if (onComplete) {
+                    onComplete();
+                } else {
+                    isBotSpeaking = false;
+                    document.getElementById('live-heard-text').innerText = "Listening... (Speak, type, or click chips)";
+                    latestSpokenText = '';
+                    ensureSpeechRecRunning();
+                    resetInactivityTimer(); // Start 10-second caller response countdown
+                }
             };
 
-            // Hard timeout ensures IVR never hangs
-            const safeMs = Math.min(9000, Math.max(2200, text.split(' ').length * 360 + 1000));
-            setTimeout(releaseBotSpeaking, safeMs);
+            // Generous fallback safety timeout (never prematurely cuts off natural speech)
+            const safeMs = Math.max(14000, text.split(' ').length * 650 + 5000);
+            botSafetyTimeout = setTimeout(() => {
+                if (thisToken === currentBotSpeechToken) {
+                    console.warn('[speakBot] Audio safety timeout reached, finalizing turn.');
+                    releaseBotSpeaking();
+                }
+            }, safeMs);
 
             // Primary: High-fidelity Neural Female Voice from server
             try {
                 const ttsUrl = `/api/v1/tts?text=${encodeURIComponent(text)}&voice=en-IN-NeerjaNeural`;
-                currentBotAudio = new Audio(ttsUrl);
-                currentBotAudio.onended = releaseBotSpeaking;
-                currentBotAudio.onerror = () => {
-                    playBrowserSpeechFallback(text, releaseBotSpeaking);
+                const audio = new Audio(ttsUrl);
+                currentBotAudio = audio;
+
+                audio.onended = () => {
+                    if (thisToken === currentBotSpeechToken) {
+                        releaseBotSpeaking();
+                    }
                 };
-                currentBotAudio.play().catch(() => {
-                    playBrowserSpeechFallback(text, releaseBotSpeaking);
+
+                audio.onerror = () => {
+                    if (thisToken === currentBotSpeechToken) {
+                        console.warn('[speakBot] Neural audio failed to load, trying browser fallback');
+                        playBrowserSpeechFallback(text, releaseBotSpeaking, thisToken);
+                    }
+                };
+
+                audio.play().catch((err) => {
+                    // Only fallback if this playback was not superseded and not deliberately paused/aborted
+                    if (thisToken === currentBotSpeechToken && err && err.name !== 'AbortError') {
+                        console.warn('[speakBot] Audio play rejected:', err);
+                        playBrowserSpeechFallback(text, releaseBotSpeaking, thisToken);
+                    }
                 });
             } catch (err) {
-                playBrowserSpeechFallback(text, releaseBotSpeaking);
+                if (thisToken === currentBotSpeechToken) {
+                    playBrowserSpeechFallback(text, releaseBotSpeaking, thisToken);
+                }
             }
         }
 
@@ -1907,6 +1964,20 @@
             latestSpokenText = '';
             clearTimeout(speechDebounceTimer);
             clearInactivityTimer();
+            if (botSafetyTimeout) {
+                clearTimeout(botSafetyTimeout);
+                botSafetyTimeout = null;
+            }
+            currentBotSpeechToken++;
+            if (currentBotAudio) {
+                currentBotAudio.onended = null;
+                currentBotAudio.onerror = null;
+                try { currentBotAudio.pause(); currentBotAudio.src = ""; } catch (e) {}
+                currentBotAudio = null;
+            }
+            if (window.speechSynthesis) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
 
             const sendBtn = document.getElementById('btn-submit-speech');
             if (sendBtn) sendBtn.style.display = 'none';
@@ -2236,9 +2307,7 @@
             if (dialogueStage === "AWAIT_TRANSFER_PURPOSE") {
                 // If caller spoke authorization directly
                 if (text.includes('authorize') || text.includes('authorization')) {
-                    speakBot("Spoken authorization phrase recognized. Verifying acoustic deepfake telemetry...", () => {
-                        executeVoiceWireTransfer(accNum, pendingTransferAmount);
-                    });
+                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
                     return;
                 }
                 dialogueStage = "AWAIT_TRANSFER_PHRASE";
@@ -2249,9 +2318,7 @@
             // Stage 4: Wire Transfer - Spoken Question 2 (Spoken Biometric Authorization Phrase)
             if (dialogueStage === "AWAIT_TRANSFER_PHRASE") {
                 if (text.includes('authorize') || text.includes('wire transfer') || text.includes('transfer') || text.includes('account') || text.includes('immediate') || text.includes('yes') || text.includes('confirm') || text.includes('proceed') || text.includes('ok') || text.length >= 6) {
-                    speakBot("Spoken authorization phrase validated. Analyzing multi-window acoustic frames for synthetic speech...", () => {
-                        executeVoiceWireTransfer(accNum, pendingTransferAmount);
-                    });
+                    executeVoiceWireTransfer(accNum, pendingTransferAmount);
                 } else {
                     speakBot("Please clearly recite: 'I authorize this immediate wire transfer from my account' to complete authorization.");
                 }
@@ -2321,7 +2388,7 @@
                     <strong>Voice Integrity:</strong> ${data.voice_integrity_score}
                 `);
                 dialogueStage = 'AWAIT_FAREWELL';
-                speakBot(`Wire transfer of ₹${amount.toLocaleString('en-IN')} to ABC Corp Limited has been authorized successfully. Is there anything else I can help you with today?`);
+                speakBot(`Spoken authorization verified. Wire transfer of ₹${amount.toLocaleString('en-IN')} to ABC Corp Limited has been authorized successfully. Is there anything else I can help you with today?`);
             } else if (res.status === 202) {
                 pendingAction = "TRANSFER";
                 dialogueStage = "AWAIT_SECURITY_Q";
